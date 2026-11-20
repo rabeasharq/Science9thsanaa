@@ -23,6 +23,7 @@ import { initThreeStudio, makeLabBench } from './threeHelpers';
 import { ChemText } from '../components/common/ChemText';
 
 interface AcidsBasesLab3DProps {
+  initialFocus?: 'indicators' | 'strength' | 'all';
   onLevelInteract?: (level: number) => void;
 }
 
@@ -35,15 +36,24 @@ const INDICATOR_OPTIONS: { id: IndicatorId; label: string }[] = [
   { id: 'tea', label: 'الشاي الأحمر' },
 ];
 
-export const AcidsBasesLab3D: React.FC<AcidsBasesLab3DProps> = ({ onLevelInteract }) => {
+export const AcidsBasesLab3D: React.FC<AcidsBasesLab3DProps> = ({
+  initialFocus = 'all',
+  onLevelInteract,
+}) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [solutionId, setSolutionId] = useState<SolutionId>('hcl');
-  const [indicatorId, setIndicatorId] = useState<IndicatorId>('methyl-orange');
+  const [indicatorId, setIndicatorId] = useState<IndicatorId>(
+    initialFocus === 'strength' ? 'universal' : 'methyl-orange'
+  );
   const [dilution, setDilution] = useState<number>(0);
   const [xrayMode, setXrayMode] = useState<boolean>(true);
   const [circuitOn, setCircuitOn] = useState<boolean>(true);
   const [safetyEvent, setSafetyEvent] = useState<'none' | 'danger-water-to-acid' | 'safe-acid-to-water'>('none');
   const [dockOpen, setDockOpen] = useState<boolean>(true);
+
+  useEffect(() => {
+    setIndicatorId(initialFocus === 'strength' ? 'universal' : 'methyl-orange');
+  }, [initialFocus]);
 
   const spec = SOLUTIONS_CATALOG[solutionId];
   const effectivePh = computeEffectivePh(solutionId, dilution);

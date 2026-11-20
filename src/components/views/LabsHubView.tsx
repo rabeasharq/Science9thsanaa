@@ -11,7 +11,7 @@ import {
   Orbit,
   Scale,
 } from 'lucide-react';
-import { LabId } from '../../types/curriculum';
+import { LabId, LabOpenContext } from '../../types/curriculum';
 import { AcidsBasesLab3D } from '../../labs/AcidsBasesLab3D';
 import { PressureLab3D } from '../../labs/PressureLab3D';
 import { MagnetismDynamoLab3D } from '../../labs/MagnetismDynamoLab3D';
@@ -26,6 +26,7 @@ import {
 
 interface LabsHubViewProps {
   activeLabId: LabId;
+  labContext?: LabOpenContext;
   onSelectLab: (labId: LabId) => void;
   onLabLevelInteract: (labId: string, level: number) => void;
 }
@@ -47,20 +48,28 @@ const LAB_CARDS: {
     tone: 'bg-teal-50 text-teal-700 dark:bg-teal-950/70 dark:text-teal-300',
   },
   {
-    id: 'pressure-3d',
-    title: 'معمل الضغط والموائع والبارومتر وبرنولي',
-    unitLabel: 'الوحدة 12',
-    summary: 'قالب الطوب على الرمل 3D، ضغط السوائل، البارومتر الزئبقي، ومبدأ برنولي.',
-    icon: Scale,
-    tone: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300',
-  },
-  {
     id: 'magnetism-dynamo-3d',
     title: 'معمل المغناطيسية والدينامو 3D',
     unitLabel: 'الوحدة 5',
     summary: 'خطوط الفيض، البوصلة، الدينامو، الدوائر الكهربائية للجرس والتمغنط والمحول.',
     icon: Magnet,
     tone: 'bg-sky-50 text-sky-700 dark:bg-sky-950/70 dark:text-sky-300',
+  },
+  {
+    id: 'anatomy-kidney-flower-3d',
+    title: 'معمل التشريح التفاعلي (الكلية والزهرة 2D / 3D)',
+    unitLabel: 'الوحدتان 6 و 7',
+    summary: 'قطاع تشريحي 2D واضح للكلية والزهرة + محاكاة النيفرون والإخصاب واللقاح والجلد والأميبا.',
+    icon: HeartPulse,
+    tone: 'bg-rose-50 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300',
+  },
+  {
+    id: 'oil-co2-3d',
+    title: 'معمل تقطير النفط وغاز CO₂',
+    unitLabel: 'الوحدة 9',
+    summary: 'برج التقطير 3D، إطفاء الشموع بـ CO₂، الأكاسيد، الصدأ، ودائرة الجرافيت، والتلوث الصناعي.',
+    icon: Flame,
+    tone: 'bg-amber-50 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300',
   },
   {
     id: 'capillary-surface-3d',
@@ -71,20 +80,12 @@ const LAB_CARDS: {
     tone: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/70 dark:text-cyan-300',
   },
   {
-    id: 'oil-co2-3d',
-    title: 'معمل تقطير النفط وغاز CO₂',
-    unitLabel: 'الوحدة 9',
-    summary: 'برج التقطير 3D، إطفاء الشموع بـ CO₂، الأكاسيد، الصدأ، ودائرة الجرافيت.',
-    icon: Flame,
-    tone: 'bg-amber-50 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300',
-  },
-  {
-    id: 'anatomy-kidney-flower-3d',
-    title: 'معمل التشريح التفاعلي (الكلية والزهرة 2D / 3D)',
-    unitLabel: 'الوحدتان 6 و 7',
-    summary: 'قطاع تشريحي 2D واضح للكلية والزهرة + محاكاة النيفرون والإخصاب واللقاح والجلد والأميبا.',
-    icon: HeartPulse,
-    tone: 'bg-rose-50 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300',
+    id: 'pressure-3d',
+    title: 'معمل الضغط والموائع والبارومتر وبرنولي',
+    unitLabel: 'الوحدة 12',
+    summary: 'قالب الطوب على الرمل 3D، ضغط السوائل، البارومتر الزئبقي، ومبدأ برنولي.',
+    icon: Scale,
+    tone: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300',
   },
 ];
 
@@ -96,6 +97,7 @@ const BRANCH_ICONS: Record<'chem' | 'space-solar' | 'genetics', React.ComponentT
 
 export const LabsHubView: React.FC<LabsHubViewProps> = ({
   activeLabId,
+  labContext,
   onSelectLab,
   onLabLevelInteract,
 }) => {
@@ -105,15 +107,24 @@ export const LabsHubView: React.FC<LabsHubViewProps> = ({
   const selectedBranchGroup =
     OTHER_UNITS_2D_BRANCHES.find((b) => b.branchId === activeBranch) ?? OTHER_UNITS_2D_BRANCHES[0];
 
+  const preferredDefaultIndex =
+    activeLabId === 'anatomy-kidney-flower-3d' && labContext?.anatomyModel === 'flower'
+      ? Math.max(0, attached2DSims.findIndex((item) => item.lessonId.startsWith('u7-')))
+      : activeLabId === 'oil-co2-3d' && labContext?.oilStation === 'co2'
+        ? Math.max(0, attached2DSims.findIndex((item) => item.lessonId === 'u9-l4'))
+        : activeLabId === 'magnetism-dynamo-3d' && labContext?.magnetStation === 'dynamo'
+          ? Math.max(0, attached2DSims.findIndex((item) => item.lessonId === 'u5-l3'))
+          : 0;
+
   return (
     <div className="space-y-6">
-      {/* القسم الأول: المعامل الثلاثية الأبعاد الستة */}
+      {/* القسم الأول: المعامل التفاعلية الستة */}
       <div className="rounded-2xl border border-slate-200/80 dark:border-slate-700/70 bg-white/62 dark:bg-slate-900/68 backdrop-blur-md p-5">
         <div className="flex items-center gap-2.5 font-extrabold text-slate-900 dark:text-white text-lg">
           <div className="w-9 h-9 rounded-xl bg-teal-50/90 dark:bg-teal-950/70 text-teal-700 dark:text-teal-300 flex items-center justify-center">
             <FlaskConical className="w-5 h-5" />
           </div>
-          <span>القسم الأول: المختبرات التفاعلية ثلاثية الأبعاد (6 معامل 3D)</span>
+          <span>القسم الأول: المختبرات التفاعلية الرئيسية (6 معامل 3D و 2D)</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
@@ -160,22 +171,37 @@ export const LabsHubView: React.FC<LabsHubViewProps> = ({
         <AcidsBasesLab3D onLevelInteract={(lvl) => onLabLevelInteract('acids-bases-3d', lvl)} />
       )}
       {activeLabId === 'pressure-3d' && (
-        <PressureLab3D onLevelInteract={(lvl) => onLabLevelInteract('pressure-3d', lvl)} />
+        <PressureLab3D
+          initialMode={labContext?.pressureMode ?? 'solid'}
+          onLevelInteract={(lvl) => onLabLevelInteract('pressure-3d', lvl)}
+        />
       )}
       {activeLabId === 'magnetism-dynamo-3d' && (
-        <MagnetismDynamoLab3D onLevelInteract={(lvl) => onLabLevelInteract('magnetism-dynamo-3d', lvl)} />
+        <MagnetismDynamoLab3D
+          initialStation={labContext?.magnetStation ?? 'compass'}
+          onLevelInteract={(lvl) => onLabLevelInteract('magnetism-dynamo-3d', lvl)}
+        />
       )}
       {activeLabId === 'capillary-surface-3d' && (
-        <CapillarySurfaceLab3D onLevelInteract={(lvl) => onLabLevelInteract('capillary-surface-3d', lvl)} />
+        <CapillarySurfaceLab3D
+          initialFocus={labContext?.capillaryFocus ?? 'both'}
+          onLevelInteract={(lvl) => onLabLevelInteract('capillary-surface-3d', lvl)}
+        />
       )}
       {activeLabId === 'oil-co2-3d' && (
-        <OilDistillationCO2Lab3D onLevelInteract={(lvl) => onLabLevelInteract('oil-co2-3d', lvl)} />
+        <OilDistillationCO2Lab3D
+          initialStation={labContext?.oilStation ?? 'distillation'}
+          onLevelInteract={(lvl) => onLabLevelInteract('oil-co2-3d', lvl)}
+        />
       )}
       {activeLabId === 'anatomy-kidney-flower-3d' && (
-        <AnatomyKidneyFlowerLab3D onLevelInteract={(lvl) => onLabLevelInteract('anatomy-kidney-flower-3d', lvl)} />
+        <AnatomyKidneyFlowerLab3D
+          initialModel={labContext?.anatomyModel ?? 'kidney'}
+          onLevelInteract={(lvl) => onLabLevelInteract('anatomy-kidney-flower-3d', lvl)}
+        />
       )}
 
-      {/* الرسوم والدوائر التابعة فقط لوحدة المعمل 3D النشط */}
+      {/* الرسوم والدوائر التابعة فقط لوحدة المعمل النشط */}
       {attached2DSims.length > 0 && (
         <div className="rounded-2xl border border-slate-200/80 dark:border-slate-700/70 bg-white/62 dark:bg-slate-900/68 backdrop-blur-md p-4 sm:p-5 space-y-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -193,9 +219,9 @@ export const LabsHubView: React.FC<LabsHubViewProps> = ({
           <div className="space-y-2.5">
             {attached2DSims.map((item, idx) => (
               <Lesson2DSimulations
-                key={`${activeLabId}-${item.lessonId}`}
+                key={`${activeLabId}-${item.lessonId}-${preferredDefaultIndex}`}
                 lessonId={item.lessonId}
-                defaultOpen={idx === 0}
+                defaultOpen={idx === preferredDefaultIndex}
                 titleOverride={`${item.unitLabel}: ${item.title}`}
                 subtitleOverride={item.subtitle}
               />
@@ -209,7 +235,7 @@ export const LabsHubView: React.FC<LabsHubViewProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">
-              القسم الثاني: مختبرات المحاكاة والدوائر للوحدات الأخرى (1، 3، 4، 10، 13، 16)
+              القسم الثاني: مختبرات المحاكاة والدوائر للوحدات الأخرى (1، 3، 4، 8، 10، 13، 14، 15، 16)
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               مصنّفة حسب الفرع العلمي والوحدة الدراسية الخاصة بها بكل دقة.

@@ -149,6 +149,10 @@ export const LessonWorkspace: React.FC<LessonWorkspaceProps> = ({
     lesson.lessonId === 'u5-l3' || lesson.lessonId === 'u5-l4' ? 'dynamo' : 'compass';
   const initialOilStation = lesson.lessonId === 'u9-l5' ? 'distillation' : 'co2';
   const initialAnatomyModel = lesson.unitId === 7 ? 'flower' : 'kidney';
+  const initialCapillaryFocus: 'surface' | 'capillary' | 'both' =
+    lesson.lessonId === 'u11-l2' ? 'surface' : 'capillary';
+  const initialAcidsFocus: 'indicators' | 'strength' | 'all' =
+    lesson.lessonId === 'u2-l2' ? 'strength' : 'indicators';
 
   return (
     <div className="space-y-4">
@@ -326,7 +330,7 @@ export const LessonWorkspace: React.FC<LessonWorkspaceProps> = ({
               onClick={() => goToStep(3)}
               className="rounded-lg bg-teal-700 hover:bg-teal-800 px-4 py-2 text-xs font-bold text-white cursor-pointer"
             >
-              {lesson.labId ? 'التالي: المختبر التفاعلي ثلاثي الأبعاد ←' : 'التالي: التجربة والمحاكاة التفاعلية ←'}
+              {lesson.labId ? 'التالي: المختبر التفاعلي والتجربة ←' : 'التالي: التجربة والمحاكاة التفاعلية ←'}
             </button>
           </div>
         </div>
@@ -336,32 +340,43 @@ export const LessonWorkspace: React.FC<LessonWorkspaceProps> = ({
       {activeStep === 3 && (
         <div className="space-y-4">
           {lesson.labId === 'acids-bases-3d' && (
-            <AcidsBasesLab3D onLevelInteract={(lvl) => onLabLevelInteract('acids-bases-3d', lvl)} />
+            <AcidsBasesLab3D
+              initialFocus={initialAcidsFocus}
+              onLevelInteract={(lvl) => onLabLevelInteract('acids-bases-3d', lvl)}
+            />
           )}
           {lesson.labId === 'pressure-3d' && (
             <PressureLab3D
               initialMode={initialPressureMode}
+              locked
               onLevelInteract={(lvl) => onLabLevelInteract('pressure-3d', lvl)}
             />
           )}
-          {lesson.labId === 'magnetism-dynamo-3d' && (
+          {lesson.labId === 'magnetism-dynamo-3d' && lesson.lessonId !== 'u5-l4' && (
             <MagnetismDynamoLab3D
               initialStation={initialMagnetStation}
+              locked
               onLevelInteract={(lvl) => onLabLevelInteract('magnetism-dynamo-3d', lvl)}
             />
           )}
           {lesson.labId === 'capillary-surface-3d' && (
-            <CapillarySurfaceLab3D onLevelInteract={(lvl) => onLabLevelInteract('capillary-surface-3d', lvl)} />
+            <CapillarySurfaceLab3D
+              initialFocus={initialCapillaryFocus}
+              locked
+              onLevelInteract={(lvl) => onLabLevelInteract('capillary-surface-3d', lvl)}
+            />
           )}
           {lesson.labId === 'oil-co2-3d' && (
             <OilDistillationCO2Lab3D
               initialStation={initialOilStation}
+              locked
               onLevelInteract={(lvl) => onLabLevelInteract('oil-co2-3d', lvl)}
             />
           )}
           {lesson.labId === 'anatomy-kidney-flower-3d' && (
             <AnatomyKidneyFlowerLab3D
               initialModel={initialAnatomyModel}
+              locked
               onLevelInteract={(lvl) => onLabLevelInteract('anatomy-kidney-flower-3d', lvl)}
             />
           )}
@@ -456,7 +471,7 @@ export const LessonWorkspace: React.FC<LessonWorkspaceProps> = ({
             </ul>
           </div>
 
-          <FormulaCalculators unitId={lesson.unitId} />
+          <FormulaCalculators unitId={lesson.unitId} lessonId={lesson.lessonId} />
 
           <div className="flex justify-end">
             <button

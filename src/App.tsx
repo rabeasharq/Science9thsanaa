@@ -30,7 +30,7 @@ import { UNIT_11_LESSONS } from './data/units/unit11Properties';
 import { UNIT_12_LESSONS } from './data/units/unit12Pressure';
 import { UNIT_13_LESSONS } from './data/units/unit13SolarEnergy';
 import { UNIT_14_LESSONS, UNIT_15_LESSONS, UNIT_16_LESSONS } from './data/units/unit14to16Biology';
-import { DetailedLessonContent, LabId, PracticeQuestion } from './types/curriculum';
+import { DetailedLessonContent, LabId, LabOpenContext, PracticeQuestion } from './types/curriculum';
 import {
   DEFAULT_PROGRESS,
   ExamAttemptRecord,
@@ -107,8 +107,8 @@ const NAV_ITEMS: {
   },
   {
     id: 'labs',
-    label: 'مختبر التجارب 3D',
-    hint: 'المعامل التفاعلية ثلاثية الأبعاد',
+    label: 'مختبر التجارب التفاعلي',
+    hint: 'المعامل 3D والمحاكيات التفاعلية 2D',
     icon: FlaskConical,
     tone: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300',
   },
@@ -139,6 +139,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('home');
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [activeLabId, setActiveLabId] = useState<LabId>('acids-bases-3d');
+  const [labContext, setLabContext] = useState<LabOpenContext>({});
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -244,8 +245,9 @@ export default function App() {
     }
   };
 
-  const handleOpenLab = (labId: LabId) => {
+  const handleOpenLab = (labId: LabId, context?: LabOpenContext) => {
     setActiveLabId(labId);
+    setLabContext(context ?? {});
     setActiveLessonId(null);
     setActiveTab('labs');
     setMenuOpen(false);
@@ -494,7 +496,11 @@ export default function App() {
         {activeTab === 'labs' && (
           <LabsHubView
             activeLabId={activeLabId}
-            onSelectLab={setActiveLabId}
+            labContext={labContext}
+            onSelectLab={(labId) => {
+              setActiveLabId(labId);
+              setLabContext({});
+            }}
             onLabLevelInteract={handleLabLevelInteract}
           />
         )}

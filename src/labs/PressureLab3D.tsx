@@ -16,13 +16,22 @@ import { initThreeStudio, makeLabBench } from './threeHelpers';
 
 interface PressureLab3DProps {
   initialMode?: 'solid' | 'liquid' | 'atmosphere';
+  locked?: boolean;
   onLevelInteract?: (level: number) => void;
 }
 
-export const PressureLab3D: React.FC<PressureLab3DProps> = ({ initialMode = 'solid', onLevelInteract }) => {
+export const PressureLab3D: React.FC<PressureLab3DProps> = ({
+  initialMode = 'solid',
+  locked = false,
+  onLevelInteract,
+}) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [mode, setMode] = useState<'solid' | 'liquid' | 'atmosphere'>(initialMode);
   const [dockOpen, setDockOpen] = useState<boolean>(true);
+
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
 
   // Mode 1: Solid Pressure (Brick on sand + 1/2 feet demo)
   const [brickFace, setBrickFace] = useState<BrickFace>('largest');
@@ -344,44 +353,46 @@ export const PressureLab3D: React.FC<PressureLab3DProps> = ({ initialMode = 'sol
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Station selector tabs */}
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setMode('solid')}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${
-            mode === 'solid'
-              ? 'bg-teal-700 text-white'
-              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
-          }`}
-        >
-          <Layers className="w-4 h-4" />
-          <span>1. الضغط في الأجسام الصلبة (الطوب والرمل)</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode('liquid')}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${
-            mode === 'liquid'
-              ? 'bg-teal-700 text-white'
-              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
-          }`}
-        >
-          <span>2. ضغط السوائل والغواصة</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode('atmosphere')}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${
-            mode === 'atmosphere'
-              ? 'bg-teal-700 text-white'
-              : 'bg-white/65 dark:bg-slate-900/70 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 text-slate-700 dark:text-slate-300'
-          }`}
-        >
-          <Wind className="w-4 h-4" />
-          <span>3. البارومتر الزئبقي ومبدأ برنولي</span>
-        </button>
-      </div>
+      {/* Station selector tabs (hidden when locked inside a specific lesson) */}
+      {!locked && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setMode('solid')}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${
+              mode === 'solid'
+                ? 'bg-teal-700 text-white'
+                : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>1. الضغط في الأجسام الصلبة (الطوب والرمل)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('liquid')}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${
+              mode === 'liquid'
+                ? 'bg-teal-700 text-white'
+                : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            <span>2. ضغط السوائل والغواصة</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('atmosphere')}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${
+              mode === 'atmosphere'
+                ? 'bg-teal-700 text-white'
+                : 'bg-white/65 dark:bg-slate-900/70 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            <Wind className="w-4 h-4" />
+            <span>3. البارومتر الزئبقي ومبدأ برنولي</span>
+          </button>
+        </div>
+      )}
 
       {/* Live Telemetry Bar */}
       {mode === 'solid' && (

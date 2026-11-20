@@ -18,6 +18,13 @@ import {
   SolutionsPrep2DSim,
   SpaceAndUniverse2DSim,
 } from './Stage2Simulations2D';
+import {
+  IndustrialPollution2DSim,
+  SolarRadiation2DSim,
+  Unit14EnvResources2DSim,
+  Unit15MotherChild2DSim,
+  Unit8Diseases2DSim,
+} from './AdditionalUnits2DSims';
 
 export interface Sim2DCatalogItem {
   lessonId: string;
@@ -70,18 +77,6 @@ export const SIMULATIONS_2D_BY_LAB: Record<LabId, Sim2DCatalogItem[]> = {
   ],
   'anatomy-kidney-flower-3d': [
     {
-      lessonId: 'u7-l2',
-      unitLabel: 'الوحدة 7',
-      title: 'انتقال الحيوان المنوي والبويضة والإخصاب + التكاثر اللاجنسي',
-      subtitle: 'مسار الحيوانات المنوية عبر الرحم وقناة فالوب والإخصاب والانغراس + الأميبا والهيدرا ونجم البحر',
-    },
-    {
-      lessonId: 'u7-l1',
-      unitLabel: 'الوحدة 7',
-      title: 'انتقال حبوب اللقاح ونمو أنبوب اللقاح والإخصاب في الزهرة',
-      subtitle: 'التلقيح الخلطي (بالنحلة) والذاتي ونمو أنبوب اللقاح عبر القلم إلى البويضة',
-    },
-    {
       lessonId: 'u6-l1',
       unitLabel: 'الوحدة 6',
       title: 'الفجوة المنقبضة في أميبا المياه العذبة مقابل المياه المالحة',
@@ -104,6 +99,18 @@ export const SIMULATIONS_2D_BY_LAB: Record<LabId, Sim2DCatalogItem[]> = {
       unitLabel: 'الوحدة 6',
       title: 'الغدة العرقية وتنظيم حرارة الجسم في الجلد',
       subtitle: 'اتساع الشعيرات الدموية وإفراز العرق في الطقس الحار مقابل البارد',
+    },
+    {
+      lessonId: 'u7-l1',
+      unitLabel: 'الوحدة 7',
+      title: 'انتقال حبوب اللقاح ونمو أنبوب اللقاح والإخصاب في الزهرة',
+      subtitle: 'التلقيح الخلطي (بالنحلة) والذاتي ونمو أنبوب اللقاح عبر القلم إلى البويضة',
+    },
+    {
+      lessonId: 'u7-l2',
+      unitLabel: 'الوحدة 7',
+      title: 'انتقال الحيوان المنوي والبويضة والإخصاب + التكاثر اللاجنسي',
+      subtitle: 'مسار الحيوانات المنوية عبر الرحم وقناة فالوب والإخصاب والانغراس + الأميبا والهيدرا ونجم البحر',
     },
   ],
   'oil-co2-3d': [
@@ -130,6 +137,12 @@ export const SIMULATIONS_2D_BY_LAB: Record<LabId, Sim2DCatalogItem[]> = {
       unitLabel: 'الوحدة 9',
       title: 'جهاز تحضير غاز CO₂ مخبرياً واختبار تعكر ماء الجير',
       subtitle: 'تفاعل كربونات الكالسيوم مع HCl و H3PO4 وجمع الغاز بالإزاحة العلوية للهواء',
+    },
+    {
+      lessonId: 'u9-l6',
+      unitLabel: 'الوحدة 9',
+      title: 'التلوث الصناعي ومعالجة مداخن المصانع وحموضة التربة (pH 6–7)',
+      subtitle: 'تأثير انبعاثات المصانع والأسمدة على التربة ومعادلتها بالجير والمرشحات',
     },
   ],
   'capillary-surface-3d': [
@@ -172,19 +185,31 @@ export const OTHER_UNITS_2D_BRANCHES: Sim2DBranchGroup[] = [
   {
     branchId: 'chem',
     branchTitle: 'فرع الكيمياء: المحاليل والتفاعلات والهالوجينات',
-    unitsLabel: 'الوحدات 1 و 3 و 10',
+    unitsLabel: 'الوحدات 1، 3، 10',
     items: [
       {
         lessonId: 'u1-l1',
         unitLabel: 'الوحدة 1',
-        title: 'تحضير المحاليل وحالات الإشباع (غير مشبع / مشبع / فوق مشبع)',
+        title: 'المحلول ومكوناته وحالات الإشباع (غير مشبع / مشبع / فوق مشبع)',
         subtitle: 'تأثير كمية المذاب والتحريك والتسخين على ذوبان الملح وترسيب البلورات',
       },
       {
         lessonId: 'u3-l1',
         unitLabel: 'الوحدة 3',
-        title: 'معايرة التعادل وتفاعل الحموض مع الكربونات والمطر الحمضي',
-        subtitle: 'سحاحة NaOH لنقطة التعادل pH=7 + فوران الكربونات + دورة SO₂ و NO₂',
+        title: 'معايرة التعادل بين الحموض والقواعد (نقطة التعادل pH=7)',
+        subtitle: 'تفاعل NaOH مع HCl وتكوين الملح والماء',
+      },
+      {
+        lessonId: 'u3-l2',
+        unitLabel: 'الوحدة 3',
+        title: 'أثر الحموض في أملاح الكربونات وتصاعد غاز CO₂',
+        subtitle: 'فوران كربونات الكالسيوم مع الحموض وتعكر ماء الجير',
+      },
+      {
+        lessonId: 'u3-l3',
+        unitLabel: 'الوحدة 3',
+        title: 'تكوّن المطر الحمضي من ذوبان SO₂ و NO₂',
+        subtitle: 'أثر الغازات الحمضية على التربة والمباني الجيرية',
       },
       {
         lessonId: 'u10-l1',
@@ -202,7 +227,7 @@ export const OTHER_UNITS_2D_BRANCHES: Sim2DBranchGroup[] = [
   },
   {
     branchId: 'space-solar',
-    branchTitle: 'فرع الفضاء والفيزياء التطبيقية: الكون والطاقة الشمسية',
+    branchTitle: 'فرع الفضاء والطاقة الشمسية',
     unitsLabel: 'الوحدتان 4 و 13',
     items: [
       {
@@ -216,6 +241,12 @@ export const OTHER_UNITS_2D_BRANCHES: Sim2DBranchGroup[] = [
         unitLabel: 'الوحدة 4',
         title: 'مراحل انطلاق الصاروخ الفضائي والأقمار الصناعية',
         subtitle: 'محاكاة قانون نيوتن الثالث وانفصال المراحل والوصول للمدار',
+      },
+      {
+        lessonId: 'u13-l1',
+        unitLabel: 'الوحدة 13',
+        title: 'الإشعاع الشمسي وزاوية سقوط الأشعة وتأثير الغيوم',
+        subtitle: 'العلاقة بين عمودية الأشعة الشمسية وتركيز الطاقة الحرارية',
       },
       {
         lessonId: 'u13-l2',
@@ -233,14 +264,62 @@ export const OTHER_UNITS_2D_BRANCHES: Sim2DBranchGroup[] = [
   },
   {
     branchId: 'genetics',
-    branchTitle: 'فرع الأحياء والوراثة: تجارب مندل والوراثة',
-    unitsLabel: 'الوحدة 16',
+    branchTitle: 'فرع الأحياء والصحة: الأمراض والبيئة والأمومة والوراثة',
+    unitsLabel: 'الوحدات 8، 14، 15، 16',
     items: [
+      {
+        lessonId: 'u8-l1',
+        unitLabel: 'الوحدة 8',
+        title: 'دورة عدوى البلهارسيا البولية وكيفية قطعها بالوقاية',
+        subtitle: 'القوقع المائي وطور السركاريا والوقاية من الحصوات البولية',
+      },
+      {
+        lessonId: 'u8-l2',
+        unitLabel: 'الوحدة 8',
+        title: 'مقارنة أمراض الجهاز التناسلي (السيلان والإيدز) وطرق الوقاية',
+        subtitle: 'تمييز المسبب وطرق الانتقال والوقاية السليمة',
+      },
+      {
+        lessonId: 'u14-l1',
+        unitLabel: 'الوحدة 14',
+        title: 'وسائل تنمية الثروة النباتية: الري بالتنقيط مقابل الغمر',
+        subtitle: 'ترشيد المياه والمدرجات الزراعية وحماية التربة',
+      },
+      {
+        lessonId: 'u14-l2',
+        unitLabel: 'الوحدة 14',
+        title: 'الصناعات الحيوية المعتمدة على البكتيريا النافعة والخميرة',
+        subtitle: 'الألبان والجبن (بكتيريا اللاكتيك) والخبز (فطر الخميرة) والنسيج',
+      },
+      {
+        lessonId: 'u15-l1',
+        unitLabel: 'الوحدة 15',
+        title: 'رعاية الحامل وتغذية الجنين عبر المشيمة والحبل السري',
+        subtitle: 'التبادل الغذائي والوقاية من فقر الدم ومحاذير الأدوية',
+      },
+      {
+        lessonId: 'u15-l2',
+        unitLabel: 'الوحدة 15',
+        title: 'مقارنة الرضاعة الطبيعية (حليب اللبا) بالرضاعة الصناعية',
+        subtitle: 'الأجسام المضادة والمناعة الطبيعية مقابل مخاطر التلوث',
+      },
+      {
+        lessonId: 'u15-l3',
+        unitLabel: 'الوحدة 15',
+        title: 'تنظيم الأسرة والمباعدة الصحية بين الولادات',
+        subtitle: 'أثر المباعدة (2–3 سنوات) على صحة الأم ونمو الطفل',
+      },
       {
         lessonId: 'u16-l1',
         unitLabel: 'الوحدة 16',
-        title: 'مربع بانيت وتوارث الصفات والأمراض الوراثية المتنحية',
-        subtitle: 'توزيع الأمشاج وحساب نسب ظهور الصفة السائدة والمتنحية (3:1 و 50%)',
+        title: 'مربع بانيت وتوارث الصفات السائدة والمتنحية',
+        subtitle: 'توزيع الأمشاج وحساب نسب ظهور الصفة (3:1 و 50%)',
+      },
+      {
+        lessonId: 'u16-l2',
+        unitLabel: 'الوحدة 16',
+        title: 'أثر زواج الأقارب في ظهور الأمراض الوراثية المتنحية',
+        subtitle: 'احتمال التقاء جينين متنحيين عند الآباء الحاملين للمرض (25%)',
       },
     ],
   },
@@ -266,6 +345,9 @@ export const HAS_2D_SIMULATION_LESSONS = new Set([
   'u6-l4',
   'u7-l1',
   'u7-l2',
+  'u8-l1',
+  'u8-l2',
+  'u8-l3',
   'u9-l1',
   'u9-l2',
   'u9-l3',
@@ -282,6 +364,11 @@ export const HAS_2D_SIMULATION_LESSONS = new Set([
   'u13-l1',
   'u13-l2',
   'u13-l3',
+  'u14-l1',
+  'u14-l2',
+  'u15-l1',
+  'u15-l2',
+  'u15-l3',
   'u16-l1',
   'u16-l2',
   'u16-l3',
@@ -1546,10 +1633,13 @@ export const Lesson2DSimulations: React.FC<Lesson2DSimulationsProps> = ({
           {lessonId === 'u6-l4' && <Excretion2DSim variant="skin" />}
           {lessonId === 'u7-l1' && <PlantPollination2DSim />}
           {lessonId === 'u7-l2' && <HumanReproduction2DSim />}
+          {lessonId === 'u8-l1' && <Unit8Diseases2DSim variant="urinary" />}
+          {(lessonId === 'u8-l2' || lessonId === 'u8-l3') && <Unit8Diseases2DSim variant="reproductive" />}
           {lessonId === 'u9-l1' && <OxidesAndCO2Prep2DSim variant="oxides" />}
-          {(lessonId === 'u9-l2' || lessonId === 'u9-l6') && <ChemistryExtra2DSim variant="rust" />}
+          {lessonId === 'u9-l2' && <ChemistryExtra2DSim variant="rust" />}
           {lessonId === 'u9-l3' && <ChemistryExtra2DSim variant="carbon" />}
           {lessonId === 'u9-l4' && <OxidesAndCO2Prep2DSim variant="co2-prep" />}
+          {lessonId === 'u9-l6' && <IndustrialPollution2DSim />}
           {(lessonId === 'u10-l1' || lessonId === 'u10-l2') && <HalogensAndChlorine2DSim variant="halogens" />}
           {lessonId === 'u10-l3' && <HalogensAndChlorine2DSim variant="chlorine" />}
           {lessonId === 'u11-l1' && <SolidPropsAndHydroJets2DSim variant="solids" />}
@@ -1557,11 +1647,17 @@ export const Lesson2DSimulations: React.FC<Lesson2DSimulationsProps> = ({
           {lessonId === 'u11-l6' && <Fluids2DSim variant="viscosity" />}
           {lessonId === 'u11-l7' && <Fluids2DSim variant="diffusion" />}
           {lessonId === 'u12-l2' && <SolidPropsAndHydroJets2DSim variant="jets" />}
+          {lessonId === 'u13-l1' && <SolarRadiation2DSim />}
           {lessonId === 'u13-l2' && <SolarEnergyCircuits2DSim variant="thermal" />}
-          {(lessonId === 'u13-l1' || lessonId === 'u13-l3') && <SolarEnergyCircuits2DSim variant="pv-circuit" />}
-          {(lessonId === 'u16-l1' || lessonId === 'u16-l2' || lessonId === 'u16-l3' || lessonId === 'u16-l4') && (
-            <Genetics2DSim />
-          )}
+          {lessonId === 'u13-l3' && <SolarEnergyCircuits2DSim variant="pv-circuit" />}
+          {lessonId === 'u14-l1' && <Unit14EnvResources2DSim variant="development" />}
+          {lessonId === 'u14-l2' && <Unit14EnvResources2DSim variant="industries" />}
+          {lessonId === 'u15-l1' && <Unit15MotherChild2DSim variant="pregnancy" />}
+          {lessonId === 'u15-l2' && <Unit15MotherChild2DSim variant="breastfeeding" />}
+          {lessonId === 'u15-l3' && <Unit15MotherChild2DSim variant="planning" />}
+          {lessonId === 'u16-l1' && <Genetics2DSim focus="general" />}
+          {lessonId === 'u16-l2' && <Genetics2DSim focus="consanguinity" />}
+          {(lessonId === 'u16-l3' || lessonId === 'u16-l4') && <Genetics2DSim focus="mutations" />}
         </div>
       )}
     </div>

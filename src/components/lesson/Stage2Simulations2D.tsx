@@ -485,9 +485,11 @@ export const SolarEnergyCircuits2DSim: React.FC<{ variant: 'thermal' | 'pv-circu
 };
 
 /* 6. الوراثة: مربع بانيت وتحديد الجنس وزواج الأقارب (الوحدة 16) */
-export const Genetics2DSim: React.FC = () => {
+export const Genetics2DSim: React.FC<{ focus?: 'general' | 'consanguinity' | 'mutations' }> = ({
+  focus = 'general',
+}) => {
   const [parent1, setParent1] = useState<'Tt' | 'TT'>('Tt');
-  const [parent2, setParent2] = useState<'Tt' | 'tt'>('Tt');
+  const [parent2, setParent2] = useState<'Tt' | 'tt'>(focus === 'consanguinity' ? 'Tt' : 'Tt');
 
   const alleles1 = parent1 === 'Tt' ? ['T', 't'] : ['T', 'T'];
   const alleles2 = parent2 === 'Tt' ? ['T', 't'] : ['t', 't'];
@@ -496,6 +498,17 @@ export const Genetics2DSim: React.FC = () => {
 
   return (
     <div className="space-y-3">
+      {focus === 'consanguinity' && (
+        <div className="rounded-xl bg-amber-50/85 dark:bg-amber-950/35 border border-amber-300/70 dark:border-amber-800 px-3 py-2 text-xs text-amber-950 dark:text-amber-100">
+          <strong>زواج الأقارب (الوحدة 16 - الدرس 2):</strong> تزداد احتمالية أن يحمل كلا الزوجين القريبين نفس الأليل المتنحي للمرض (Tt × Tt)، فيظهر المرض الوراثي بنسبة 25% في الأبناء!
+        </div>
+      )}
+      {focus === 'mutations' && (
+        <div className="rounded-xl bg-indigo-50/85 dark:bg-indigo-950/35 border border-indigo-300/70 dark:border-indigo-800 px-3 py-2 text-xs text-indigo-950 dark:text-indigo-100">
+          <strong>الطفرات والأمراض الوراثية:</strong> تغيّر مفاجئ في تركيب الكروموسوم أو الجين (كالأشعة أو الكيماويات) قد يورّث صفة أو مرضاً مثل فقر الدم المنجلي والهيموفيليا.
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
         <div className="flex flex-wrap gap-2">
           <button
@@ -510,7 +523,7 @@ export const Genetics2DSim: React.FC = () => {
                 : 'bg-white/75 dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
             }`}
           >
-            تزاوج هجينين (Tt × Tt) — نسبة 3:1
+            تزاوج حاملين (Tt × Tt) — نسبة 3:1
           </button>
           <button
             type="button"
@@ -524,7 +537,7 @@ export const Genetics2DSim: React.FC = () => {
                 : 'bg-white/75 dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
             }`}
           >
-            تزاوج حامل × متنحي (Tt × tt) — 50%
+            تزاوج حامل × مصاب/متنحي (Tt × tt) — 50%
           </button>
           <button
             type="button"

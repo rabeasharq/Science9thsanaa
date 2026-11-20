@@ -15,6 +15,14 @@ export type LabId =
   | 'oil-co2-3d'
   | 'anatomy-kidney-flower-3d';
 
+export interface LabOpenContext {
+  anatomyModel?: 'kidney' | 'flower';
+  pressureMode?: 'solid' | 'liquid' | 'atmosphere';
+  magnetStation?: 'compass' | 'dynamo';
+  oilStation?: 'distillation' | 'co2';
+  capillaryFocus?: 'surface' | 'capillary' | 'both';
+}
+
 export interface LessonIndexEntry {
   id: string;
   unitId: number;

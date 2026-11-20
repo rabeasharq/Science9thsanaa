@@ -10,12 +10,35 @@ import {
   Search,
 } from 'lucide-react';
 import { CURRICULUM_UNITS } from '../../data/curriculumIndex';
-import { LabId, UnitIndexEntry } from '../../types/curriculum';
+import { LabId, LabOpenContext, UnitIndexEntry } from '../../types/curriculum';
 
 interface CurriculumMapViewProps {
   completedLessonIds: string[];
   onOpenLesson: (unitId: number, lessonId: string) => void;
-  onOpenLab: (labId: LabId) => void;
+  onOpenLab: (labId: LabId, context?: LabOpenContext) => void;
+}
+
+function getUnitLabLaunch(unit: UnitIndexEntry): { context: LabOpenContext; label: string } {
+  switch (unit.id) {
+    case 2:
+      return { context: {}, label: 'تشغيل مختبر الحموض والقواعد التفاعلي' };
+    case 5:
+      return { context: { magnetStation: 'compass' }, label: 'تشغيل مختبر المغناطيسية والدينامو 3D' };
+    case 6:
+      return { context: { anatomyModel: 'kidney' }, label: 'تشغيل مختبر تشريح الكلية والجهاز البولي' };
+    case 7:
+      return { context: { anatomyModel: 'flower' }, label: 'تشغيل مختبر تشريح الزهرة التفاعلي' };
+    case 8:
+      return { context: { anatomyModel: 'kidney' }, label: 'تشغيل مختبر تشريح الكلية (الأمراض البولية)' };
+    case 9:
+      return { context: { oilStation: 'distillation' }, label: 'تشغيل مختبر تقطير النفط وغاز CO₂ 3D' };
+    case 11:
+      return { context: { capillaryFocus: 'both' }, label: 'تشغيل مختبر الخاصية الشعرية والشد السطحي 3D' };
+    case 12:
+      return { context: { pressureMode: 'solid' }, label: 'تشغيل مختبر الضغط والموائع والبارومتر 3D' };
+    default:
+      return { context: {}, label: 'تشغيل المختبر التفاعلي المرتبط' };
+  }
 }
 
 const DOMAIN_STYLE: Record<
@@ -176,18 +199,21 @@ export const CurriculumMapView: React.FC<CurriculumMapViewProps> = ({
                 })}
               </div>
 
-              {unit.labId && (
-                <div className="pt-1 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => onOpenLab(unit.labId!)}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 dark:text-teal-400 hover:underline cursor-pointer"
-                  >
-                    <FlaskConical className="w-3.5 h-3.5" />
-                    <span>تشغيل المختبر ثلاثي الأبعاد المرتبط</span>
-                  </button>
-                </div>
-              )}
+              {unit.labId && (() => {
+                const launch = getUnitLabLaunch(unit);
+                return (
+                  <div className="pt-1 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => onOpenLab(unit.labId!, launch.context)}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 dark:text-teal-400 hover:underline cursor-pointer"
+                    >
+                      <FlaskConical className="w-3.5 h-3.5" />
+                      <span>{launch.label}</span>
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
           );
         })}

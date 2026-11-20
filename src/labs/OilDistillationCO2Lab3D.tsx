@@ -13,11 +13,13 @@ const FRACTIONS = [
 
 export interface OilDistillationCO2Lab3DProps {
   initialStation?: 'distillation' | 'co2';
+  locked?: boolean;
   onLevelInteract?: (level: number) => void;
 }
 
 export const OilDistillationCO2Lab3D: React.FC<OilDistillationCO2Lab3DProps> = ({
   initialStation = 'distillation',
+  locked = false,
   onLevelInteract,
 }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -186,32 +188,34 @@ export const OilDistillationCO2Lab3D: React.FC<OilDistillationCO2Lab3DProps> = (
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            setStation('distillation');
-            onLevelInteract?.(1);
-          }}
-          className={`rounded-lg px-3 py-2 text-xs font-bold cursor-pointer ${
-            station === 'distillation' ? 'bg-teal-700 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'
-          }`}
-        >
-          1. برج التقطير التجزيئي للنفط
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setStation('co2');
-            onLevelInteract?.(2);
-          }}
-          className={`rounded-lg px-3 py-2 text-xs font-bold cursor-pointer ${
-            station === 'co2' ? 'bg-teal-700 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'
-          }`}
-        >
-          2. سكب غاز CO2 لإطفاء الشموع المتدرجة
-        </button>
-      </div>
+      {!locked && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setStation('distillation');
+              onLevelInteract?.(1);
+            }}
+            className={`rounded-lg px-3 py-2 text-xs font-bold cursor-pointer ${
+              station === 'distillation' ? 'bg-teal-700 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'
+            }`}
+          >
+            1. برج التقطير التجزيئي للنفط
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStation('co2');
+              onLevelInteract?.(2);
+            }}
+            className={`rounded-lg px-3 py-2 text-xs font-bold cursor-pointer ${
+              station === 'co2' ? 'bg-teal-700 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'
+            }`}
+          >
+            2. سكب غاز CO2 لإطفاء الشموع المتدرجة
+          </button>
+        </div>
+      )}
 
       <div className="relative w-full h-[350px] sm:h-[400px] rounded-2xl overflow-hidden border border-slate-300/80 dark:border-slate-800 bg-slate-950">
         <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />

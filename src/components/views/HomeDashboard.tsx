@@ -102,7 +102,7 @@ const UNITS_SHOWCASE: QuickUnitItem[] = [
     title: 'الإخراج في الكائنات الحية',
     desc: 'فجوة الأميبا، النتح والإدماع، وتشريح الكلية والجلد.',
     lessonCount: 4,
-    lessonId: 'u6-l3',
+    lessonId: 'u6-l1',
     icon: HeartPulse,
     iconTone: 'bg-rose-50 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300',
   },
@@ -135,7 +135,7 @@ const UNITS_SHOWCASE: QuickUnitItem[] = [
     title: 'تفاعلات العناصر والنفط',
     desc: 'الأكاسيد، الكربون، غاز CO₂، وتقطير النفط الخام 3D.',
     lessonCount: 6,
-    lessonId: 'u9-l5',
+    lessonId: 'u9-l1',
     icon: Flame,
     iconTone: 'bg-amber-50 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300',
   },
@@ -146,7 +146,7 @@ const UNITS_SHOWCASE: QuickUnitItem[] = [
     title: 'الهالوجينات',
     desc: 'الفلور والكلور والبروم واليود، وجهاز تحضير وتجفيف الكلور.',
     lessonCount: 3,
-    lessonId: 'u10-l3',
+    lessonId: 'u10-l1',
     icon: FlaskConical,
     iconTone: 'bg-lime-50 text-lime-700 dark:bg-lime-950/70 dark:text-lime-300',
   },
@@ -157,7 +157,7 @@ const UNITS_SHOWCASE: QuickUnitItem[] = [
     title: 'خواص الأجسام والشد السطحي',
     desc: 'الشد السطحي، التماسك والتلاصق، والخاصية الشعرية 3D.',
     lessonCount: 7,
-    lessonId: 'u11-l4',
+    lessonId: 'u11-l1',
     icon: Droplets,
     iconTone: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/70 dark:text-cyan-300',
   },
@@ -179,7 +179,7 @@ const UNITS_SHOWCASE: QuickUnitItem[] = [
     title: 'الطاقة الشمسية واستغلالها',
     desc: 'الإشعاع الشمسي، السخان الحراري، والخلايا الكهروضوئية.',
     lessonCount: 3,
-    lessonId: 'u13-l3',
+    lessonId: 'u13-l1',
     icon: Sun,
     iconTone: 'bg-amber-50 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300',
   },
@@ -243,10 +243,10 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               الجمهورية اليمنية · علوم الصف التاسع الأساسي
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white leading-snug">
-              تعلّم العلوم بالتجربة ثلاثية الأبعاد
+              تعلّم العلوم بالتجربة التفاعلية 3D و 2D
             </h1>
             <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              دروس تفاعلية، مختبرات علمية ثلاثية الأبعاد، حاسبات قوانين، ومحاكي الاختبارات الوزارية في واجهة مريحة وسهلة القراءة.
+              دروس تفاعلية لجميع الوحدات الـ 16، مختبرات ثلاثية وثنائية الأبعاد، حاسبات قوانين، ومحاكي الاختبارات الوزارية في واجهة مريحة وسهلة القراءة.
             </p>
 
             <div className="pt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
@@ -255,7 +255,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               </span>
               <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
               <span>
-                <strong className="font-mono-num text-slate-900 dark:text-white">6</strong> مختبرات 3D
+                <strong className="font-mono-num text-slate-900 dark:text-white">6</strong> معامل 3D ومحاكيات 2D
               </span>
               <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
               <span>
@@ -284,7 +284,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               className="flex items-center gap-2 rounded-xl bg-teal-700 hover:bg-teal-800 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors cursor-pointer whitespace-nowrap"
             >
               <FlaskConical className="w-4 h-4" />
-              <span>دخول مختبر التجارب 3D</span>
+              <span>دخول مختبر التجارب التفاعلي</span>
             </button>
             <button
               type="button"

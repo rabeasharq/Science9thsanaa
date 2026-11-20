@@ -5,11 +5,13 @@ import { initThreeStudio, makeLabBench } from './threeHelpers';
 
 export interface MagnetismDynamoLab3DProps {
   initialStation?: 'compass' | 'dynamo';
+  locked?: boolean;
   onLevelInteract?: (level: number) => void;
 }
 
 export const MagnetismDynamoLab3D: React.FC<MagnetismDynamoLab3DProps> = ({
   initialStation = 'compass',
+  locked = false,
   onLevelInteract,
 }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -223,34 +225,36 @@ export const MagnetismDynamoLab3D: React.FC<MagnetismDynamoLab3DProps> = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            setStation('compass');
-            onLevelInteract?.(1);
-          }}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold cursor-pointer ${
-            station === 'compass' ? 'bg-teal-700 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'
-          }`}
-        >
-          <Compass className="w-4 h-4" />
-          <span>1. المغناطيس وخطوط الفيض والبوصلة</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setStation('dynamo');
-            onLevelInteract?.(3);
-          }}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold cursor-pointer ${
-            station === 'dynamo' ? 'bg-teal-700 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'
-          }`}
-        >
-          <Zap className="w-4 h-4" />
-          <span>2. الدينامو والحث الكهرومغناطيسي</span>
-        </button>
-      </div>
+      {!locked && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setStation('compass');
+              onLevelInteract?.(1);
+            }}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold cursor-pointer ${
+              station === 'compass' ? 'bg-teal-700 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'
+            }`}
+          >
+            <Compass className="w-4 h-4" />
+            <span>1. المغناطيس وخطوط الفيض والبوصلة</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStation('dynamo');
+              onLevelInteract?.(3);
+            }}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold cursor-pointer ${
+              station === 'dynamo' ? 'bg-teal-700 text-white' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'
+            }`}
+          >
+            <Zap className="w-4 h-4" />
+            <span>2. الدينامو والحث الكهرومغناطيسي</span>
+          </button>
+        </div>
+      )}
 
       <div className="relative w-full h-[350px] sm:h-[400px] rounded-2xl overflow-hidden border border-slate-300/80 dark:border-slate-800 bg-slate-950">
         <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />

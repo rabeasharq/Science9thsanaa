@@ -73,11 +73,13 @@ const FLOWER_PARTS: PartMeta[] = [
 
 export interface AnatomyKidneyFlowerLab3DProps {
   initialModel?: 'kidney' | 'flower';
+  locked?: boolean;
   onLevelInteract?: (level: number) => void;
 }
 
 export const AnatomyKidneyFlowerLab3D: React.FC<AnatomyKidneyFlowerLab3DProps> = ({
   initialModel = 'kidney',
+  locked = false,
   onLevelInteract,
 }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -340,38 +342,46 @@ export const AnatomyKidneyFlowerLab3D: React.FC<AnatomyKidneyFlowerLab3DProps> =
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setModel('kidney');
-              setSelectedPart(KIDNEY_PARTS[0]);
-              onLevelInteract?.(1);
-            }}
-            className={`rounded-xl px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${
-              model === 'kidney'
-                ? 'bg-teal-700 text-white'
-                : 'bg-white/80 dark:bg-slate-900 border border-slate-200 dark:border-slate-700'
-            }`}
-          >
-            1. تشريح الكلية في الإنسان (الوحدة 6)
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setModel('flower');
-              setSelectedPart(FLOWER_PARTS[0]);
-              onLevelInteract?.(2);
-            }}
-            className={`rounded-xl px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${
-              model === 'flower'
-                ? 'bg-teal-700 text-white'
-                : 'bg-white/80 dark:bg-slate-900 border border-slate-200 dark:border-slate-700'
-            }`}
-          >
-            2. تشريح الزهرة الكاملة (الوحدة 7)
-          </button>
-        </div>
+        {locked ? (
+          <div className="rounded-xl bg-teal-700 text-white px-3.5 py-2 text-xs font-bold">
+            {model === 'kidney'
+              ? 'تشريح الكلية والجهاز البولي في الإنسان'
+              : 'تشريح الزهرة الكاملة وأعضائها التكاثرية'}
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setModel('kidney');
+                setSelectedPart(KIDNEY_PARTS[0]);
+                onLevelInteract?.(1);
+              }}
+              className={`rounded-xl px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${
+                model === 'kidney'
+                  ? 'bg-teal-700 text-white'
+                  : 'bg-white/80 dark:bg-slate-900 border border-slate-200 dark:border-slate-700'
+              }`}
+            >
+              1. تشريح الكلية في الإنسان (الوحدة 6)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setModel('flower');
+                setSelectedPart(FLOWER_PARTS[0]);
+                onLevelInteract?.(2);
+              }}
+              className={`rounded-xl px-3 py-2 text-xs font-bold cursor-pointer transition-colors ${
+                model === 'flower'
+                  ? 'bg-teal-700 text-white'
+                  : 'bg-white/80 dark:bg-slate-900 border border-slate-200 dark:border-slate-700'
+              }`}
+            >
+              2. تشريح الزهرة الكاملة (الوحدة 7)
+            </button>
+          </div>
+        )}
 
         <div className="flex items-center gap-1.5 text-xs">
           <button

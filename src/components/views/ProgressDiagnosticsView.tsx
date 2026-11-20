@@ -22,11 +22,11 @@ interface ProgressDiagnosticsViewProps {
 }
 
 const SKILL_REMEDIAL_MAP: Record<SkillTag, { unitId: number; lessonId: string; hint: string }> = {
-  'حفظ مصطلح': { unitId: 2, lessonId: 'u2-l1', hint: 'راجع بطاقات المصطلحات والكواشف الأربعة' },
-  'تفسير ظاهرة': { unitId: 12, lessonId: 'u12-l2', hint: 'استكشف أسباب تغير الضغط والتأين في المعمل 3D' },
-  'تطبيق قانون وتحويل وحدات': { unitId: 12, lessonId: 'u12-l1', hint: 'تدرّب على تحويل ث.كجم × 10 = نيوتن وحاسبة الضغط' },
-  'قراءة رسم/معادلة': { unitId: 2, lessonId: 'u2-l1', hint: 'فعّل الرؤية الأيونية (X-Ray) لمتابعة اتجاه H+ و OH-' },
-  'استنتاج': { unitId: 12, lessonId: 'u12-l3', hint: 'حلّ تحديات المستوى 4 في المختبر (التوقّع قبل التجربة)' },
+  'حفظ مصطلح': { unitId: 2, lessonId: 'u2-l1', hint: 'راجع بطاقات المصطلحات والتعاريف الأساسية للدرس' },
+  'تفسير ظاهرة': { unitId: 12, lessonId: 'u12-l2', hint: 'استكشف أسباب الظاهرة العلمية في المختبر التفاعلي' },
+  'تطبيق قانون وتحويل وحدات': { unitId: 12, lessonId: 'u12-l1', hint: 'تدرّب على تطبيق القوانين والتحويلات خطوة بخطوة' },
+  'قراءة رسم/معادلة': { unitId: 9, lessonId: 'u9-l4', hint: 'راجع المعادلات الموزونة والرسوم التوضيحية في الدرس' },
+  'استنتاج': { unitId: 11, lessonId: 'u11-l2', hint: 'حلّ تحديات التوقّع قبل التجربة في المختبر التفاعلي' },
 };
 
 export const ProgressDiagnosticsView: React.FC<ProgressDiagnosticsViewProps> = ({
@@ -36,6 +36,20 @@ export const ProgressDiagnosticsView: React.FC<ProgressDiagnosticsViewProps> = (
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [backupMsg, setBackupMsg] = useState<string>('');
+
+  const getDynamicRemedial = (skillName: SkillTag) => {
+    const fallback = SKILL_REMEDIAL_MAP[skillName];
+    const wrongEntries = Object.values(progress.answeredQuestions).filter(
+      (a) => !a.isCorrect && a.skill === skillName
+    );
+    if (wrongEntries.length === 0) return fallback;
+    const latestWrong = wrongEntries[wrongEntries.length - 1];
+    return {
+      unitId: latestWrong.unitId,
+      lessonId: latestWrong.lessonId,
+      hint: `بناءً على إجاباتك: يوصى بمراجعة الوحدة ${latestWrong.unitId} لتحسين هذه المهارة`,
+    };
+  };
 
   const handleExport = () => {
     const json = exportProgressJson(progress);
@@ -81,7 +95,7 @@ export const ProgressDiagnosticsView: React.FC<ProgressDiagnosticsViewProps> = (
         <div className="space-y-3">
           {skills.map(([skillName, stats]) => {
             const pct = stats.attempts > 0 ? Math.round((stats.correct / stats.attempts) * 100) : null;
-            const remedial = SKILL_REMEDIAL_MAP[skillName];
+            const remedial = getDynamicRemedial(skillName);
             return (
               <div
                 key={skillName}

@@ -662,6 +662,32 @@ const additionalBank: PracticeQuestion[] = [
 
 export const ALL_AVAILABLE_QUESTIONS: PracticeQuestion[] = [...lessonQuestions, ...additionalBank];
 
+function pickBalancedByUnit(items: PracticeQuestion[], limit: number): PracticeQuestion[] {
+  const byUnit = new Map<number, PracticeQuestion[]>();
+  for (const q of items) {
+    const arr = byUnit.get(q.unitId);
+    if (arr) arr.push(q);
+    else byUnit.set(q.unitId, [q]);
+  }
+  const unitKeys = Array.from(byUnit.keys()).sort((a, b) => a - b);
+  const result: PracticeQuestion[] = [];
+  let round = 0;
+  while (result.length < limit) {
+    let addedInRound = false;
+    for (const u of unitKeys) {
+      const bucket = byUnit.get(u)!;
+      if (round < bucket.length) {
+        result.push(bucket[round]);
+        addedInRound = true;
+        if (result.length >= limit) break;
+      }
+    }
+    if (!addedInRound) break;
+    round++;
+  }
+  return result;
+}
+
 export function buildMinisterialMockExam(filterUnitId?: number): {
   questions: PracticeQuestion[];
   tfCount: number;
@@ -677,8 +703,8 @@ export function buildMinisterialMockExam(filterUnitId?: number): {
   const mcqs = pool.filter((q) => q.type === 'mcq');
 
   if (!filterUnitId && tfs.length >= 20 && mcqs.length >= 30) {
-    const selectedTf = tfs.slice(0, 20);
-    const selectedMcq = mcqs.slice(0, 30);
+    const selectedTf = pickBalancedByUnit(tfs, 20);
+    const selectedMcq = pickBalancedByUnit(mcqs, 30);
     const questions = [...selectedTf, ...selectedMcq];
     return {
       questions,
@@ -689,7 +715,7 @@ export function buildMinisterialMockExam(filterUnitId?: number): {
     };
   }
 
-  // إذا كان الاختبار لوحدة محددة أو لم يكتمل 50 فقرة فريدة بعد
+  // إذا كان الاختبار لوحدة محددة
   const selectedTf = tfs.slice(0, 20);
   const selectedMcq = mcqs.slice(0, 30);
   const questions = [...selectedTf, ...selectedMcq];
