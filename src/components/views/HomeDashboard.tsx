@@ -7,6 +7,7 @@ import {
   ClipboardCheck,
   Dna,
   Droplets,
+  FileText,
   Flame,
   FlaskConical,
   HeartPulse,
@@ -24,7 +25,7 @@ import { StudentProgressState } from '../../storage/progressDb';
 interface HomeDashboardProps {
   progress: StudentProgressState;
   onOpenLesson: (unitId: number, lessonId: string) => void;
-  onNavigateTab: (tab: 'home' | 'curriculum' | 'labs' | 'exam' | 'progress' | 'review') => void;
+  onNavigateTab: (tab: 'home' | 'curriculum' | 'labs' | 'booklet' | 'exam' | 'progress' | 'review') => void;
 }
 
 interface QuickUnitItem {
@@ -285,6 +286,14 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             >
               <FlaskConical className="w-4 h-4" />
               <span>دخول مختبر التجارب التفاعلي</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigateTab('booklet')}
+              className="flex items-center gap-2 rounded-xl border border-emerald-300/80 dark:border-emerald-700/80 bg-emerald-50/85 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/70 px-4 py-3 text-xs sm:text-sm font-bold text-emerald-800 dark:text-emerald-200 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <FileText className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
+              <span>الملزمة الشاملة PDF</span>
             </button>
             <button
               type="button"

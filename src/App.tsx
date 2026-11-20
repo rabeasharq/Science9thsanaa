@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ClipboardCheck,
   Copy,
+  FileText,
   FlaskConical,
   Home,
   Menu,
@@ -46,9 +47,10 @@ import { LabsHubView } from './components/views/LabsHubView';
 import { MinisterialExamSimulator } from './components/exam/MinisterialExamSimulator';
 import { ProgressDiagnosticsView } from './components/views/ProgressDiagnosticsView';
 import { ReviewConceptsView } from './components/views/ReviewConceptsView';
+import { BookletPdfView } from './components/views/BookletPdfView';
 import { LessonWorkspace } from './components/lesson/LessonWorkspace';
 
-type NavTab = 'home' | 'curriculum' | 'labs' | 'exam' | 'progress' | 'review';
+type NavTab = 'home' | 'curriculum' | 'labs' | 'booklet' | 'exam' | 'progress' | 'review';
 type FontScale = 'normal' | 'large' | 'xlarge';
 
 const FONT_SCALE_PX: Record<FontScale, string> = {
@@ -111,6 +113,13 @@ const NAV_ITEMS: {
     hint: 'المعامل 3D والمحاكيات التفاعلية 2D',
     icon: FlaskConical,
     tone: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300',
+  },
+  {
+    id: 'booklet',
+    label: 'الملزمة الشاملة (PDF)',
+    hint: 'كتاب تفاعلي للطباعة A4 وحفظ PDF و Word',
+    icon: FileText,
+    tone: 'bg-teal-50 text-teal-700 dark:bg-teal-950/70 dark:text-teal-300',
   },
   {
     id: 'exam',
@@ -331,10 +340,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col relative text-slate-800 dark:text-slate-100">
-      <ScienceBackdrop />
+      <div className="no-print">
+        <ScienceBackdrop />
+      </div>
 
       {/* شريط علوي مضغوط وشفاف مع قائمة منسدلة تختفي تلقائياً وأداة تكبير الخط */}
-      <header className="sticky top-0 z-40 border-b border-slate-200/60 dark:border-slate-800/70 bg-white/58 dark:bg-slate-900/62 backdrop-blur-md">
+      <header className="no-print sticky top-0 z-40 border-b border-slate-200/60 dark:border-slate-800/70 bg-white/58 dark:bg-slate-900/62 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
           {/* العلامة التجارية */}
           <button
@@ -505,6 +516,8 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'booklet' && <BookletPdfView />}
+
         {activeTab === 'exam' && (
           <MinisterialExamSimulator
             onSaveAttempt={handleSaveExamAttempt}
@@ -526,7 +539,7 @@ export default function App() {
         {activeTab === 'review' && <ReviewConceptsView />}
       </main>
 
-      <footer className="border-t border-slate-200/60 dark:border-slate-800/70 bg-white/58 dark:bg-slate-900/62 backdrop-blur-md mt-auto">
+      <footer className="no-print border-t border-slate-200/60 dark:border-slate-800/70 bg-white/58 dark:bg-slate-900/62 backdrop-blur-md mt-auto">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-300">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-center sm:text-right">
             <span className="font-extrabold text-slate-900 dark:text-white">
@@ -562,7 +575,9 @@ export default function App() {
         </div>
       </footer>
 
-      <OfflineIndicator />
+      <div className="no-print">
+        <OfflineIndicator />
+      </div>
     </div>
   );
 }

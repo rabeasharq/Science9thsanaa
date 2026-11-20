@@ -688,21 +688,27 @@ function pickBalancedByUnit(items: PracticeQuestion[], limit: number): PracticeQ
   return result;
 }
 
-export function buildMinisterialMockExam(filterUnitId?: number): {
+export function buildMinisterialMockExam(filterUnitId?: number | number[]): {
   questions: PracticeQuestion[];
   tfCount: number;
   mcqCount: number;
   maxScore: number;
   isFull50Mode: boolean;
 } {
-  const pool = filterUnitId
-    ? ALL_AVAILABLE_QUESTIONS.filter((q) => q.unitId === filterUnitId)
+  const unitSet = Array.isArray(filterUnitId)
+    ? new Set(filterUnitId)
+    : typeof filterUnitId === 'number'
+      ? new Set([filterUnitId])
+      : null;
+
+  const pool = unitSet
+    ? ALL_AVAILABLE_QUESTIONS.filter((q) => unitSet.has(q.unitId))
     : ALL_AVAILABLE_QUESTIONS;
 
   const tfs = pool.filter((q) => q.type === 'tf');
   const mcqs = pool.filter((q) => q.type === 'mcq');
 
-  if (!filterUnitId && tfs.length >= 20 && mcqs.length >= 30) {
+  if ((!unitSet || unitSet.size > 1) && tfs.length >= 20 && mcqs.length >= 30) {
     const selectedTf = pickBalancedByUnit(tfs, 20);
     const selectedMcq = pickBalancedByUnit(mcqs, 30);
     const questions = [...selectedTf, ...selectedMcq];
