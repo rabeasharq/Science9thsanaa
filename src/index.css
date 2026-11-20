@@ -1,0 +1,33 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  html {
+    font-family: 'Cairo', 'Tajawal', system-ui, -apple-system, sans-serif;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-[#f6fafb] text-slate-800 dark:bg-[#08101c] dark:text-slate-100 antialiased selection:bg-teal-200/70 selection:text-teal-950 dark:selection:bg-teal-800/70 dark:selection:text-teal-100;
+  }
+}
+
+.font-mono-num {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.katex-ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+}
+
+.katex-display {
+  direction: ltr;
+  unicode-bidi: isolate;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25rem 0;
+}
+
