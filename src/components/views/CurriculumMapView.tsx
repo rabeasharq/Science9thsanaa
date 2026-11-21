@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import {
+  ArrowRight,
   ArrowUpLeft,
   Atom,
   BookOpen,
   CheckCircle2,
   FlaskConical,
   Globe,
+  Home,
+  LayoutGrid,
   Leaf,
   Search,
 } from 'lucide-react';
@@ -14,6 +17,9 @@ import { LabId, LabOpenContext, UnitIndexEntry } from '../../types/curriculum';
 
 interface CurriculumMapViewProps {
   completedLessonIds: string[];
+  selectedUnitId?: number | null;
+  onSelectUnit?: (unitId: number | null) => void;
+  onBackHome?: () => void;
   onOpenLesson: (unitId: number, lessonId: string) => void;
   onOpenLab: (labId: LabId, context?: LabOpenContext) => void;
 }
@@ -65,11 +71,178 @@ const DOMAIN_STYLE: Record<
 
 export const CurriculumMapView: React.FC<CurriculumMapViewProps> = ({
   completedLessonIds,
+  selectedUnitId = null,
+  onSelectUnit,
+  onBackHome,
   onOpenLesson,
   onOpenLab,
 }) => {
   const [partFilter, setPartFilter] = useState<'all' | 1 | 2>('all');
   const [search, setSearch] = useState('');
+
+  const focusedUnit =
+    typeof selectedUnitId === 'number'
+      ? CURRICULUM_UNITS.find((u) => u.id === selectedUnitId) ?? null
+      : null;
+
+  if (focusedUnit) {
+    const domainMeta = DOMAIN_STYLE[focusedUnit.domain];
+    const DomainIcon = domainMeta.icon;
+    const completedInUnit = focusedUnit.lessons.filter((l) => completedLessonIds.includes(l.id)).length;
+    const launch = focusedUnit.labId ? getUnitLabLaunch(focusedUnit) : null;
+
+    return (
+      <div className="space-y-5">
+        {/* شريط العودة والتنقل للوحدة المختارة */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {onBackHome && (
+              <button
+                type="button"
+                onClick={onBackHome}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/85 dark:border-slate-700/80 bg-white/80 dark:bg-slate-900/75 hover:bg-slate-100 dark:hover:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+              >
+                <Home className="w-3.5 h-3.5 text-teal-700 dark:text-teal-400" />
+                <span>العودة للرئيسية</span>
+              </button>
+            )}
+            {onSelectUnit && (
+              <button
+                type="button"
+                onClick={() => onSelectUnit(null)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-teal-200/80 dark:border-teal-800/70 bg-teal-50/80 dark:bg-teal-950/60 hover:bg-teal-100 dark:hover:bg-teal-900/70 px-3 py-2 text-xs font-bold text-teal-800 dark:text-teal-200 transition-colors cursor-pointer"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>جميع وحدات الكتاب (16)</span>
+              </button>
+            )}
+          </div>
+
+          <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+            الإنجاز في الوحدة: {completedInUnit} / {focusedUnit.lessons.length} دروس
+          </span>
+        </div>
+
+        {/* بطاقة رأس الوحدة */}
+        <div className="rounded-2xl border border-teal-400/50 dark:border-teal-700/60 bg-white/75 dark:bg-slate-900/75 backdrop-blur-md p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${domainMeta.tone}`}>
+              <DomainIcon className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                <span>الجزء {focusedUnit.part === 1 ? 'الأول' : 'الثاني'}</span>
+                <span aria-hidden="true">·</span>
+                <span>{focusedUnit.domain}</span>
+                <span aria-hidden="true">·</span>
+                <span>ابتداءً من ص {focusedUnit.pageNumber}</span>
+              </div>
+              <h2 className="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+                الوحدة {focusedUnit.id}: {focusedUnit.title}
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                اختر أي درس من القائمة أدناه لفتحه، وعند الخروج من الدرس ستعود إلى هذه القائمة مباشرة.
+              </p>
+            </div>
+          </div>
+
+          {focusedUnit.labId && launch && (
+            <button
+              type="button"
+              onClick={() => onOpenLab(focusedUnit.labId!, launch.context)}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-colors cursor-pointer shrink-0"
+            >
+              <FlaskConical className="w-4 h-4" />
+              <span>{launch.label}</span>
+            </button>
+          )}
+        </div>
+
+        {/* قائمة دروس الوحدة */}
+        <div className="space-y-3">
+          <div className="text-sm font-extrabold text-slate-800 dark:text-slate-100">
+            قائمة دروس الوحدة ({focusedUnit.lessons.length} دروس):
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            {focusedUnit.lessons.map((lesson) => {
+              const done = completedLessonIds.includes(lesson.id);
+              const lessonReady = lesson.status === 'completed';
+              return (
+                <button
+                  key={lesson.id}
+                  type="button"
+                  disabled={!lessonReady}
+                  onClick={() => lessonReady && onOpenLesson(focusedUnit.id, lesson.id)}
+                  className={`w-full text-right rounded-2xl border p-4 sm:p-5 flex items-center justify-between gap-3 transition-colors ${
+                    lessonReady
+                      ? 'border-slate-200/85 dark:border-slate-700/80 bg-white/75 dark:bg-slate-900/75 hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50/40 dark:hover:bg-teal-950/30 cursor-pointer'
+                      : 'border-slate-200/60 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/40 opacity-75 cursor-default'
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-sm shrink-0 ${
+                        done
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300'
+                          : 'bg-teal-50 text-teal-800 dark:bg-teal-950/70 dark:text-teal-300'
+                      }`}
+                    >
+                      {done ? <CheckCircle2 className="w-5 h-5" /> : lesson.lessonNumber}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white truncate">
+                        الدرس {lesson.lessonNumber}: {lesson.title}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex flex-wrap items-center gap-2">
+                        <span>الكتاب المدرسي ص {lesson.pageNumber}</span>
+                        {done && (
+                          <span className="text-emerald-700 dark:text-emerald-400 font-bold">· مكتمل</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {lessonReady && (
+                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-teal-700 text-white px-3.5 py-2 text-xs font-bold shrink-0">
+                      <span>فتح الدرس</span>
+                      <ArrowUpLeft className="w-3.5 h-3.5" />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* تنقل سريع بين الوحدات المجاورة */}
+        <div className="flex items-center justify-between pt-2 border-t border-slate-200/70 dark:border-slate-800 text-xs">
+          {focusedUnit.id > 1 && onSelectUnit ? (
+            <button
+              type="button"
+              onClick={() => onSelectUnit(focusedUnit.id - 1)}
+              className="inline-flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-400 hover:underline cursor-pointer"
+            >
+              <ArrowRight className="w-3.5 h-3.5" />
+              <span>الوحدة السابقة (الوحدة {focusedUnit.id - 1})</span>
+            </button>
+          ) : (
+            <span />
+          )}
+
+          {focusedUnit.id < 16 && onSelectUnit && (
+            <button
+              type="button"
+              onClick={() => onSelectUnit(focusedUnit.id + 1)}
+              className="inline-flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-400 hover:underline cursor-pointer"
+            >
+              <span>الوحدة التالية (الوحدة {focusedUnit.id + 1})</span>
+              <ArrowUpLeft className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const filteredUnits = CURRICULUM_UNITS.filter((u) => {
     if (partFilter !== 'all' && u.part !== partFilter) return false;
@@ -151,7 +324,17 @@ export const CurriculumMapView: React.FC<CurriculumMapViewProps> = ({
                       <span>ص {unit.pageNumber}</span>
                     </div>
                     <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white mt-0.5">
-                      الوحدة {unit.id}: {unit.title}
+                      {onSelectUnit ? (
+                        <button
+                          type="button"
+                          onClick={() => onSelectUnit(unit.id)}
+                          className="text-right hover:text-teal-700 dark:hover:text-teal-400 transition-colors cursor-pointer"
+                        >
+                          الوحدة {unit.id}: {unit.title}
+                        </button>
+                      ) : (
+                        <>الوحدة {unit.id}: {unit.title}</>
+                      )}
                     </h3>
                   </div>
                 </div>

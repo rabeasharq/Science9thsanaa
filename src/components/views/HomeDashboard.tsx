@@ -24,6 +24,7 @@ import { StudentProgressState } from '../../storage/progressDb';
 
 interface HomeDashboardProps {
   progress: StudentProgressState;
+  onOpenUnit: (unitId: number) => void;
   onOpenLesson: (unitId: number, lessonId: string) => void;
   onNavigateTab: (tab: 'home' | 'curriculum' | 'labs' | 'booklet' | 'exam' | 'progress' | 'review') => void;
 }
@@ -221,7 +222,8 @@ const UNITS_SHOWCASE: QuickUnitItem[] = [
 
 export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   progress,
-  onOpenLesson,
+  onOpenUnit,
+  onOpenLesson: _onOpenLesson,
   onNavigateTab,
 }) => {
   const [partFilter, setPartFilter] = useState<'all' | 1 | 2>('all');
@@ -370,10 +372,10 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => onOpenLesson(unit.unitId, unit.lessonId)}
+                  onClick={() => onOpenUnit(unit.unitId)}
                   className="inline-flex items-center justify-between w-full rounded-xl bg-slate-50/75 dark:bg-slate-800/70 hover:bg-teal-700 hover:text-white dark:hover:bg-teal-700 px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-100 transition-colors cursor-pointer"
                 >
-                  <span>ابدأ دراسة الوحدة</span>
+                  <span>عرض دروس الوحدة ({unit.lessonCount})</span>
                   <ArrowUpLeft className="w-4 h-4" />
                 </button>
               </div>

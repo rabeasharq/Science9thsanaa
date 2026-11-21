@@ -188,7 +188,7 @@ export const LessonWorkspace: React.FC<LessonWorkspaceProps> = ({
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 dark:text-teal-400 hover:underline mb-1 cursor-pointer"
           >
             <ArrowRight className="w-3.5 h-3.5" />
-            <span>العودة إلى خريطة الوحدات</span>
+            <span>العودة إلى قائمة دروس الوحدة</span>
           </button>
           <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">{lesson.title}</h2>
           <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -612,7 +612,7 @@ export const LessonWorkspace: React.FC<LessonWorkspaceProps> = ({
               onClick={onBackToUnits}
               className="rounded-lg bg-teal-700 hover:bg-teal-800 px-4 py-2 text-xs font-bold text-white cursor-pointer"
             >
-              العودة إلى الوحدات لاختيار الدرس التالي
+              العودة إلى قائمة دروس الوحدة
             </button>
           </div>
         </div>

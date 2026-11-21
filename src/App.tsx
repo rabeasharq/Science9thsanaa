@@ -146,6 +146,7 @@ const NAV_ITEMS: {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('home');
+  const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [activeLabId, setActiveLabId] = useState<LabId>('acids-bases-3d');
   const [labContext, setLabContext] = useState<LabOpenContext>({});
@@ -236,22 +237,75 @@ export default function App() {
     });
   };
 
+  const pushNavHistory = (tab: NavTab, unitId: number | null, lessonId: string | null) => {
+    try {
+      window.history.pushState({ tab, unitId, lessonId }, '');
+    } catch {
+      // ignore if restricted by sandbox
+    }
+  };
+
+  useEffect(() => {
+    try {
+      window.history.replaceState({ tab: 'home', unitId: null, lessonId: null }, '');
+    } catch {
+      // ignore
+    }
+    const handlePopState = (e: PopStateEvent) => {
+      const st = e.state as { tab?: NavTab; unitId?: number | null; lessonId?: string | null } | null;
+      if (!st || !st.tab) return;
+      setActiveTab(st.tab);
+      setSelectedUnitId(st.unitId ?? null);
+      setActiveLessonId(st.lessonId ?? null);
+      setMenuOpen(false);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const handleSelectNav = (tab: NavTab) => {
+    const nextUnitId = tab === 'curriculum' || tab === 'home' ? null : selectedUnitId;
     setActiveTab(tab);
-    if (tab !== 'curriculum') {
-      setActiveLessonId(null);
+    setActiveLessonId(null);
+    if (tab === 'curriculum' || tab === 'home') {
+      setSelectedUnitId(null);
     }
     setMenuOpen(false);
+    pushNavHistory(tab, nextUnitId, null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleOpenLesson = (_unitId: number, lessonId: string) => {
-    if (DETAILED_LESSONS_MAP[lessonId]) {
+  const handleOpenUnit = (unitId: number) => {
+    setSelectedUnitId(unitId);
+    setActiveLessonId(null);
+    setActiveTab('curriculum');
+    setMenuOpen(false);
+    pushNavHistory('curriculum', unitId, null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleOpenLesson = (unitId: number, lessonId: string) => {
+    const lessonObj = DETAILED_LESSONS_MAP[lessonId];
+    if (lessonObj) {
+      const resolvedUnitId = lessonObj.unitId || unitId;
+      setSelectedUnitId(resolvedUnitId);
       setActiveLessonId(lessonId);
       setActiveTab('curriculum');
       setMenuOpen(false);
+      pushNavHistory('curriculum', resolvedUnitId, lessonId);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const handleBackToUnitLessons = () => {
+    const resolvedUnitId =
+      activeLessonId && DETAILED_LESSONS_MAP[activeLessonId]
+        ? DETAILED_LESSONS_MAP[activeLessonId].unitId
+        : selectedUnitId;
+    setSelectedUnitId(resolvedUnitId);
+    setActiveLessonId(null);
+    pushNavHistory('curriculum', resolvedUnitId, null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleOpenLab = (labId: LabId, context?: LabOpenContext) => {
@@ -260,6 +314,7 @@ export default function App() {
     setActiveLessonId(null);
     setActiveTab('labs');
     setMenuOpen(false);
+    pushNavHistory('labs', selectedUnitId, null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -479,6 +534,7 @@ export default function App() {
         {activeTab === 'home' && (
           <HomeDashboard
             progress={progress}
+            onOpenUnit={handleOpenUnit}
             onOpenLesson={handleOpenLesson}
             onNavigateTab={handleSelectNav}
           />
@@ -494,11 +550,17 @@ export default function App() {
               onStepProgress={handleStepProgress}
               onRecordQuestionAnswer={handleRecordQuestionAnswer}
               onLabLevelInteract={handleLabLevelInteract}
-              onBackToUnits={() => setActiveLessonId(null)}
+              onBackToUnits={handleBackToUnitLessons}
             />
           ) : (
             <CurriculumMapView
               completedLessonIds={progress.completedLessons}
+              selectedUnitId={selectedUnitId}
+              onSelectUnit={(unitId) => {
+                setSelectedUnitId(unitId);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onBackHome={() => handleSelectNav('home')}
               onOpenLesson={handleOpenLesson}
               onOpenLab={handleOpenLab}
             />
