@@ -5,12 +5,18 @@ import {
   BookOpen,
   Calculator,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Download,
+  ExternalLink,
   FileText,
   FlaskConical,
   Link2,
+  Loader2,
   Printer,
+  Share2,
   Sparkles,
+  Type,
 } from 'lucide-react';
 import { CURRICULUM_UNITS } from '../../data/curriculumIndex';
 import { UNIT_01_LESSONS } from '../../data/units/unit01Solutions';
@@ -34,8 +40,9 @@ import { EnrichedLessonBookletData } from '../../data/booklet/enrichedTypes';
 import { BOOKLET_DIAGRAMS } from '../../data/booklet/diagramsIndex';
 import { DetailedLessonContent, PracticeQuestion } from '../../types/curriculum';
 import { ChemText, MathBlock } from '../common/ChemText';
+import { generateBookletDocxBlob } from '../../utils/exportBookletDocx';
 
-const DEFAULT_VERCEL_URL = 'https://interactive-science-lab-9th.vercel.app';
+const DEFAULT_VERCEL_URL = 'https://Science9thsanaa.vercel.app';
 const AUTHOR_NAME = 'الأستاذ إبراهيم أحمد متاش';
 const AUTHOR_PHONE = '779424090';
 
@@ -73,17 +80,48 @@ const ENRICHED_MAP: Record<string, EnrichedLessonBookletData> = {
 };
 
 type BookletScope = 'all' | 'part1' | 'part2' | number;
+type ViewMode = 'reader' | 'full';
+type ReaderPage = 'cover' | number | 'exam';
+type ReaderFont = 'normal' | 'comfortable' | 'large';
 
-export const BookletPdfView: React.FC = () => {
+const READER_FONT_CLASS: Record<ReaderFont, string> = {
+  normal: 'text-[13px] sm:text-sm',
+  comfortable: 'text-sm sm:text-base',
+  large: 'text-base sm:text-lg',
+};
+
+interface BookletPdfViewProps {
+  onOpenLesson?: (unitId: number, lessonId: string) => void;
+}
+
+export const BookletPdfView: React.FC<BookletPdfViewProps> = ({ onOpenLesson }) => {
+  const [viewMode, setViewMode] = useState<ViewMode>('reader');
+  const [readerPage, setReaderPage] = useState<ReaderPage>('cover');
+  const [readerFont, setReaderFont] = useState<ReaderFont>('comfortable');
   const [scope, setScope] = useState<BookletScope>('all');
   const [includeAnswers, setIncludeAnswers] = useState<boolean>(true);
   const [includeExam, setIncludeExam] = useState<boolean>(true);
   const [vercelUrl, setVercelUrl] = useState<string>(DEFAULT_VERCEL_URL);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [docxBusy, setDocxBusy] = useState<boolean>(false);
+  const [docxError, setDocxError] = useState<string | null>(null);
+  const [readyDocx, setReadyDocx] = useState<{
+    url: string;
+    blob: Blob;
+    filename: string;
+    sizeKb: number;
+  } | null>(null);
 
   useEffect(() => {
-    const target = vercelUrl.trim() || DEFAULT_VERCEL_URL;
-    QRCode.toDataURL(target, {
+    return () => {
+      if (readyDocx?.url) URL.revokeObjectURL(readyDocx.url);
+    };
+  }, [readyDocx]);
+
+  useEffect(() => {
+    const raw = vercelUrl.trim() || DEFAULT_VERCEL_URL;
+    const normalized = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    QRCode.toDataURL(normalized, {
       width: 220,
       margin: 1,
       color: { dark: '#0f172a', light: '#ffffff' },
@@ -93,13 +131,22 @@ export const BookletPdfView: React.FC = () => {
   }, [vercelUrl]);
 
   const visibleUnits = useMemo(() => {
+    if (viewMode === 'reader') {
+      if (typeof readerPage === 'number') {
+        return CURRICULUM_UNITS.filter((u) => u.id === readerPage);
+      }
+      return [];
+    }
     if (scope === 'all') return CURRICULUM_UNITS;
     if (scope === 'part1') return CURRICULUM_UNITS.filter((u) => u.part === 1);
     if (scope === 'part2') return CURRICULUM_UNITS.filter((u) => u.part === 2);
     return CURRICULUM_UNITS.filter((u) => u.id === scope);
-  }, [scope]);
+  }, [viewMode, readerPage, scope]);
 
   const mockExam = useMemo(() => {
+    if (viewMode === 'reader') {
+      return buildMinisterialMockExam();
+    }
     if (typeof scope === 'number') {
       return buildMinisterialMockExam(scope);
     }
@@ -110,13 +157,142 @@ export const BookletPdfView: React.FC = () => {
       return buildMinisterialMockExam([9, 10, 11, 12, 13, 14, 15, 16]);
     }
     return buildMinisterialMockExam();
-  }, [scope]);
+  }, [viewMode, scope]);
 
-  const totalLessonsInScope = visibleUnits.reduce((acc, u) => acc + u.lessons.length, 0);
+  const totalLessonsInScope =
+    viewMode === 'reader'
+      ? CURRICULUM_UNITS.reduce((acc, u) => acc + u.lessons.length, 0)
+      : visibleUnits.reduce((acc, u) => acc + u.lessons.length, 0);
 
-  const handlePrintPdf = () => {
+  const readerOrder: ReaderPage[] = useMemo(
+    () => ['cover', ...CURRICULUM_UNITS.map((u) => u.id), 'exam'],
+    []
+  );
+  const currentReaderIdx = readerOrder.indexOf(readerPage);
+
+  const goToReaderPage = (page: ReaderPage) => {
+    setReaderPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleJumpToUnit = (unitId: number) => {
+    if (viewMode === 'reader') {
+      goToReaderPage(unitId);
+    } else {
+      const el = document.getElementById(`booklet-unit-${unitId}`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handlePrintCurrentPdf = () => {
     window.print();
   };
+
+  const handlePrintFullBookPdf = () => {
+    setViewMode('full');
+    setScope('all');
+    window.setTimeout(() => {
+      window.print();
+    }, 220);
+  };
+
+  const displayUrl = (() => {
+    const raw = vercelUrl.trim() || DEFAULT_VERCEL_URL;
+    return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  })();
+
+  const triggerBlobDownload = (url: string, filename: string) => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const handleDownloadWord = async (targetScope: BookletScope = 'all') => {
+    if (docxBusy) return;
+    setDocxBusy(true);
+    setDocxError(null);
+    try {
+      const filename =
+        targetScope === 'all'
+          ? 'ملزمة_علوم_الصف_التاسع_اليمني_كاملة.docx'
+          : targetScope === 'part1'
+            ? 'ملزمة_علوم_الصف_التاسع_الجزء_الأول.docx'
+            : targetScope === 'part2'
+              ? 'ملزمة_علوم_الصف_التاسع_الجزء_الثاني.docx'
+              : `ملزمة_علوم_التاسع_الوحدة_${targetScope}.docx`;
+
+      let finalBlob: Blob | null = null;
+
+      // عند طلب النسخة الكاملة بالإعدادات الافتراضية، نجرب أولاً الملف الجاهز إذا كان سليماً (PK header)
+      const isDefaultFull =
+        targetScope === 'all' &&
+        includeAnswers &&
+        includeExam &&
+        displayUrl.toLowerCase() === DEFAULT_VERCEL_URL.toLowerCase();
+
+      if (isDefaultFull) {
+        try {
+          const res = await fetch('/malzama-science9-yemen.docx', { cache: 'no-store' });
+          if (res.ok) {
+            const buf = await res.arrayBuffer();
+            const head = new Uint8Array(buf, 0, Math.min(4, buf.byteLength));
+            // التأكد أن الملف هو ZIP/DOCX حقيقي وليس صفحة HTML
+            if (buf.byteLength > 100_000 && head[0] === 0x50 && head[1] === 0x4b) {
+              finalBlob = new Blob([buf], {
+                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+              });
+            }
+          }
+        } catch {
+          // سننتقل لتوليد الملف مباشرة داخل المتصفح
+        }
+      }
+
+      if (!finalBlob) {
+        finalBlob = await generateBookletDocxBlob({
+          scope: targetScope,
+          includeAnswers,
+          includeExam,
+          vercelUrl: displayUrl,
+        });
+      }
+
+      if (readyDocx?.url) URL.revokeObjectURL(readyDocx.url);
+      const blobUrl = URL.createObjectURL(finalBlob);
+      const sizeKb = Math.round(finalBlob.size / 1024);
+      setReadyDocx({ url: blobUrl, blob: finalBlob, filename, sizeKb });
+      triggerBlobDownload(blobUrl, filename);
+    } catch {
+      setDocxError('تعذّر تجهيز ملف الوورد؛ يمكنك استخدام زر «حفظ كملف PDF» أو المحاولة مرة أخرى.');
+    } finally {
+      setDocxBusy(false);
+    }
+  };
+
+  const handleShareWord = async () => {
+    if (!readyDocx) return;
+    try {
+      const file = new File([readyDocx.blob], readyDocx.filename, {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'ملزمة علوم الصف التاسع - المنهج اليمني',
+        });
+      }
+    } catch {
+      // المستخدم ألغى المشاركة
+    }
+  };
+
+  const showCoverAndToc = viewMode === 'full' || readerPage === 'cover';
+  const showExamSection =
+    (viewMode === 'full' && includeExam) || (viewMode === 'reader' && readerPage === 'exam');
 
   return (
     <div className="space-y-6">
@@ -132,108 +308,274 @@ export const BookletPdfView: React.FC = () => {
                 الملزمة العلمية الشاملة والمفسّرة (نسخة الطباعة PDF و Word)
               </h2>
               <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
-                ملزمة متكاملة تغني عن الكتاب المدرسي وتعمل كمعلم ومختبر ورقي (16 وحدة / 53 درساً + 26 لوحة رسوم توضيحية + اختبار وزاري).
+                ملزمة متكاملة تغني عن الكتاب المدرسي وتعمل كمعلم ومختبر ورقي (16 وحدة / 53 درساً + {Object.keys(BOOKLET_DIAGRAMS).length} لوحة رسوم ملوّنة بالخطوات والبيانات + اختبار وزاري).
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={handlePrintPdf}
+              onClick={handlePrintCurrentPdf}
               className="flex items-center gap-2 rounded-xl bg-teal-700 hover:bg-teal-800 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>حفظ كملف PDF / طباعة A4</span>
+              <span>{viewMode === 'reader' ? 'طباعة / حفظ هذه الصفحة PDF' : 'حفظ كملف PDF / طباعة A4'}</span>
             </button>
 
-            <a
-              href="/malzama-science9-yemen.docx"
-              download="ملزمة_علوم_الصف_التاسع_اليمني.docx"
-              className="flex items-center gap-2 rounded-xl border border-teal-600/40 bg-teal-50/90 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/70 px-4 py-2.5 text-xs sm:text-sm font-bold text-teal-800 dark:text-teal-200 transition-colors"
+            {viewMode === 'reader' && (
+              <button
+                type="button"
+                onClick={handlePrintFullBookPdf}
+                className="flex items-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 px-3.5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors cursor-pointer"
+              >
+                <FileText className="w-4 h-4" />
+                <span>حفظ كامل الملزمة PDF</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              disabled={docxBusy}
+              onClick={() => handleDownloadWord('all')}
+              className="flex items-center gap-2 rounded-xl border border-teal-600/40 bg-teal-50/90 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/70 px-4 py-2.5 text-xs sm:text-sm font-bold text-teal-800 dark:text-teal-200 transition-colors cursor-pointer disabled:opacity-60"
             >
-              <Download className="w-4 h-4" />
-              <span>تنزيل نسخة Word (.docx)</span>
-            </a>
+              {docxBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              <span>{docxBusy ? 'جاري تجهيز ملف Word...' : 'تحميل الملزمة كاملة (Word .docx)'}</span>
+            </button>
           </div>
         </div>
 
-        {/* خيارات التخصيص */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 border-t border-slate-200/80 dark:border-slate-800">
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-              نطاق الملزمة للطباعة / PDF:
-            </label>
-            <select
-              value={String(scope)}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v === 'all' || v === 'part1' || v === 'part2') setScope(v);
-                else setScope(Number(v));
-              }}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:border-teal-600 focus:outline-none"
+        {docxError && (
+          <div className="rounded-xl border border-rose-300 bg-rose-50 px-3.5 py-2 text-xs font-bold text-rose-800">
+            {docxError}
+          </div>
+        )}
+
+        {readyDocx && (
+          <div className="rounded-xl border border-emerald-300 bg-emerald-50/90 dark:bg-emerald-950/50 dark:border-emerald-800 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span className="font-bold text-emerald-900 dark:text-emerald-200">
+              ✓ تم تجهيز ملف الوورد الكامل بنجاح ({readyDocx.sizeKb} كيلوبايت) — إذا لم يبدأ التنزيل تلقائياً اضغط «حفظ الملف»:
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <a
+                href={readyDocx.url}
+                download={readyDocx.filename}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 font-bold transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>حفظ الملف (.docx)</span>
+              </a>
+              {typeof navigator !== 'undefined' && 'share' in navigator && (
+                <button
+                  type="button"
+                  onClick={handleShareWord}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-600/50 bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-200 px-3 py-1.5 font-bold hover:bg-emerald-100 cursor-pointer transition-colors"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>مشاركة / حفظ بالهاتف</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* تبديل وضع القراءة داخل التطبيق vs العرض الكامل للطباعة */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200/80 dark:border-slate-800">
+          <div className="inline-flex items-center gap-1 rounded-xl bg-slate-100 dark:bg-slate-800 p-1 text-xs">
+            <button
+              type="button"
+              onClick={() => setViewMode('reader')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-colors cursor-pointer ${
+                viewMode === 'reader'
+                  ? 'bg-teal-700 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-700'
+              }`}
             >
-              <option value="all">كامل المنهج (الجزأين 1 و 2 — 16 وحدة / 53 درساً)</option>
-              <option value="part1">الجزء الأول فقط (الوحدات 1 – 8)</option>
-              <option value="part2">الجزء الثاني فقط (الوحدات 9 – 16)</option>
+              قراءة داخل التطبيق (وحدة بوحدة)
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('full')}
+              className={`px-3 py-1.5 rounded-lg font-bold transition-colors cursor-pointer ${
+                viewMode === 'full'
+                  ? 'bg-teal-700 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-700'
+              }`}
+            >
+              العرض الشامل للطباعة PDF
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5 text-xs">
+            <span className="font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1">
+              <Type className="w-3.5 h-3.5 text-teal-700 dark:text-teal-400" />
+              <span>حجم نص الملزمة:</span>
+            </span>
+            {(
+              [
+                { id: 'normal', label: 'قياسي' },
+                { id: 'comfortable', label: 'مريح' },
+                { id: 'large', label: 'كبير' },
+              ] as const
+            ).map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setReaderFont(f.id)}
+                className={`px-2.5 py-1 rounded-lg font-bold cursor-pointer transition-colors ${
+                  readerFont === f.id
+                    ? 'bg-teal-700 text-white'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* خيارات القراءة السريعة أو نطاق الطباعة */}
+        {viewMode === 'reader' ? (
+          <div className="space-y-2.5 pt-2 border-t border-slate-200/70 dark:border-slate-800">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                تصفح فصول الملزمة مباشرة:
+              </span>
+              <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includeAnswers}
+                  onChange={(e) => setIncludeAnswers(e.target.checked)}
+                  className="accent-teal-700 w-4 h-4 rounded"
+                />
+                <span>إظهار ملحق الإجابات المفسّرة</span>
+              </label>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => goToReaderPage('cover')}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
+                  readerPage === 'cover'
+                    ? 'bg-teal-700 text-white'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                الغلاف والفهرس
+              </button>
               {CURRICULUM_UNITS.map((u) => (
-                <option key={u.id} value={String(u.id)}>
-                  الوحدة {u.id} فقط: {u.title} ({u.lessons.length} دروس)
-                </option>
+                <button
+                  key={u.id}
+                  type="button"
+                  onClick={() => goToReaderPage(u.id)}
+                  title={`الوحدة ${u.id}: ${u.title}`}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
+                    readerPage === u.id
+                      ? 'bg-teal-700 text-white'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  وحدة {u.id}
+                </button>
               ))}
-            </select>
+              <button
+                type="button"
+                onClick={() => goToReaderPage('exam')}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
+                  readerPage === 'exam'
+                    ? 'bg-indigo-700 text-white'
+                    : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-100'
+                }`}
+              >
+                الاختبار الوزاري (50 فقرة)
+              </button>
+            </div>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-200/80 dark:border-slate-800">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                نطاق الملزمة للطباعة / PDF:
+              </label>
+              <select
+                value={String(scope)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === 'all' || v === 'part1' || v === 'part2') setScope(v);
+                  else setScope(Number(v));
+                }}
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:border-teal-600 focus:outline-none"
+              >
+                <option value="all">كامل المنهج (الجزأين 1 و 2 — 16 وحدة / 53 درساً)</option>
+                <option value="part1">الجزء الأول فقط (الوحدات 1 – 8)</option>
+                <option value="part2">الجزء الثاني فقط (الوحدات 9 – 16)</option>
+                {CURRICULUM_UNITS.map((u) => (
+                  <option key={u.id} value={String(u.id)}>
+                    الوحدة {u.id} فقط: {u.title} ({u.lessons.length} دروس)
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200">
-              <Link2 className="w-3.5 h-3.5 text-teal-700 dark:text-teal-400" />
-              <span>رابط التطبيق على Vercel (يتحدّث رمز QR تلقائياً):</span>
-            </label>
-            <input
-              type="url"
-              dir="ltr"
-              value={vercelUrl}
-              onChange={(e) => setVercelUrl(e.target.value)}
-              placeholder={DEFAULT_VERCEL_URL}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-mono-num text-slate-800 dark:text-slate-100 focus:border-teal-600 focus:outline-none"
-            />
-          </div>
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200">
+                <Link2 className="w-3.5 h-3.5 text-teal-700 dark:text-teal-400" />
+                <span>رابط التطبيق على Vercel (يتحدّث رمز QR تلقائياً):</span>
+              </label>
+              <input
+                type="url"
+                dir="ltr"
+                value={vercelUrl}
+                onChange={(e) => setVercelUrl(e.target.value)}
+                placeholder={DEFAULT_VERCEL_URL}
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-mono-num text-slate-800 dark:text-slate-100 focus:border-teal-600 focus:outline-none"
+              />
+            </div>
 
-          <div className="flex flex-col justify-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200">
-            <label className="inline-flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={includeAnswers}
-                onChange={(e) => setIncludeAnswers(e.target.checked)}
-                className="accent-teal-700 w-4 h-4 rounded"
-              />
-              <span>تضمين ملحق الإجابات المفسّرة نهاية كل وحدة</span>
-            </label>
-            <label className="inline-flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={includeExam}
-                onChange={(e) => setIncludeExam(e.target.checked)}
-                className="accent-teal-700 w-4 h-4 rounded"
-              />
-              <span>تضمين ملحق الاختبار الوزاري وورقة التظليل</span>
-            </label>
+            <div className="flex flex-col justify-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200">
+              <label className="inline-flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includeAnswers}
+                  onChange={(e) => setIncludeAnswers(e.target.checked)}
+                  className="accent-teal-700 w-4 h-4 rounded"
+                />
+                <span>تضمين ملحق الإجابات المفسّرة نهاية كل وحدة</span>
+              </label>
+              <label className="inline-flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includeExam}
+                  onChange={(e) => setIncludeExam(e.target.checked)}
+                  className="accent-teal-700 w-4 h-4 rounded"
+                />
+                <span>تضمين ملحق الاختبار الوزاري وورقة التظليل</span>
+              </label>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="rounded-xl bg-amber-50/85 dark:bg-amber-950/45 border border-amber-200/80 dark:border-amber-800/60 px-3.5 py-2 text-[11px] sm:text-xs text-amber-950 dark:text-amber-200 flex items-center justify-between gap-2 flex-wrap">
           <span>
-            💡 <strong>للحفظ كملف PDF احترافي:</strong> اضغط زر «حفظ كملف PDF / طباعة A4» ثم اختر الوجهة <strong>«حفظ بتنسيق PDF / Save as PDF»</strong> (حجم الورق A4).
+            💡 <strong>للحفظ كملف PDF احترافي:</strong> اضغط زر الطباعة/الحفظ ثم اختر الوجهة <strong>«حفظ بتنسيق PDF / Save as PDF»</strong> بحجم ورق A4.
           </span>
           <span className="font-bold">
-            المعروض حالياً: {visibleUnits.length} وحدة · {totalLessonsInScope} درساً
+            {viewMode === 'reader'
+              ? readerPage === 'cover'
+                ? 'الغلاف والفهرس التفاعلي (انقر على أي وحدة للفتح)'
+                : readerPage === 'exam'
+                  ? 'ملحق الاختبار الوزاري الشامل (50 فقرة)'
+                  : `الوحدة ${readerPage} من 16`
+              : `المعروض حالياً: ${visibleUnits.length} وحدة · ${totalLessonsInScope} درساً`}
           </span>
         </div>
       </div>
 
       {/* ورقة الملزمة المنسقة للطباعة A4 (تُطبع بخلفية بيضاء نقية دائماً) */}
-      <article className="booklet-sheet rounded-2xl border border-slate-200/80 bg-white text-slate-900 p-6 sm:p-10 shadow-sm space-y-8">
+      <article className={`booklet-sheet rounded-2xl border border-slate-200/80 bg-white text-slate-900 p-5 sm:p-10 shadow-sm space-y-8 ${READER_FONT_CLASS[readerFont]}`}>
         {/* 1. صفحة الغلاف */}
+        {showCoverAndToc && (
         <section className="space-y-6">
           <div className="rounded-2xl bg-teal-700 text-white p-6 sm:p-8 text-center space-y-2.5">
             <div className="text-xs sm:text-sm font-bold text-teal-100">
@@ -254,7 +596,7 @@ export const BookletPdfView: React.FC = () => {
             <ul className="space-y-1.5 text-xs sm:text-sm text-slate-800 leading-relaxed list-disc list-inside">
               <li>تغطي كامل المنهج اليمني بجزأيه الأول والثاني بأسلوب سلس ووافٍ لا يحتاج إلى معلم.</li>
               <li>تبدأ كل درس ببطاقة «تأسيس سريع وخلفية علمية» لمعالجة الضعف التراكمي وبناء الأساس العلمي.</li>
-              <li>تضم 26 لوحة رسوم توضيحية مشروحة وخطوات عملية للتجارب لتعويض غياب المختبرات والهواتف.</li>
+              <li>تضم {Object.keys(BOOKLET_DIAGRAMS).length} لوحة رسوم توضيحية ملوّنة ومرتّبة كخطوات رسم بجميع البيانات والأجزاء لتعويض غياب المختبرات والهواتف.</li>
               <li>تشمل القوانين والمسائل المحلولة خطوة بخطوة، والمصائد الوزارية، واختباراً وزارياً كاملاً مع الإجابات.</li>
             </ul>
           </div>
@@ -280,13 +622,13 @@ export const BookletPdfView: React.FC = () => {
               <div className="pt-1">
                 <strong>رابط التطبيق التفاعلي (3D) على فيرسل (Vercel):</strong>{' '}
                 <a
-                  href={vercelUrl || DEFAULT_VERCEL_URL}
+                  href={displayUrl}
                   target="_blank"
                   rel="noreferrer"
                   dir="ltr"
                   className="font-mono-num font-bold text-sky-700 underline break-all"
                 >
-                  {vercelUrl || DEFAULT_VERCEL_URL}
+                  {displayUrl}
                 </a>
               </div>
               <p className="text-[11px] text-slate-600 leading-relaxed">
@@ -308,12 +650,17 @@ export const BookletPdfView: React.FC = () => {
             </div>
           </div>
         </section>
+        )}
 
         {/* 2. الفهرس */}
+        {showCoverAndToc && (
         <section className="print-page-break space-y-4">
           <h2 className="text-xl font-extrabold text-teal-800 text-center border-b-2 border-teal-700 pb-2">
-            فهرس محتويات الملزمة ({visibleUnits.length} وحدة / {totalLessonsInScope} درساً)
+            فهرس محتويات الملزمة ({viewMode === 'reader' ? CURRICULUM_UNITS.length : visibleUnits.length} وحدة / {totalLessonsInScope} درساً)
           </h2>
+          <p className="no-print text-xs text-slate-500 text-center">
+            انقر على أي وحدة في الفهرس لفتحها مباشرة وقراءتها:
+          </p>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-xs">
               <thead>
@@ -327,13 +674,19 @@ export const BookletPdfView: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {visibleUnits.map((u) => (
-                  <tr key={u.id} className="odd:bg-white even:bg-slate-50">
+                {(viewMode === 'reader' ? CURRICULUM_UNITS : visibleUnits).map((u) => (
+                  <tr
+                    key={u.id}
+                    onClick={() => handleJumpToUnit(u.id)}
+                    className="odd:bg-white even:bg-slate-50 hover:bg-teal-50/80 cursor-pointer transition-colors"
+                  >
                     <td className="border border-slate-300 px-2 py-2 text-center font-bold">{u.id}</td>
                     <td className="border border-slate-300 px-2 py-2 text-center">
                       {u.part === 1 ? 'الأول' : 'الثاني'}
                     </td>
-                    <td className="border border-slate-300 px-3 py-2 font-bold text-slate-900">{u.title}</td>
+                    <td className="border border-slate-300 px-3 py-2 font-bold text-teal-800 underline decoration-teal-300">
+                      {u.title}
+                    </td>
                     <td className="border border-slate-300 px-2 py-2 text-center">{u.domain}</td>
                     <td className="border border-slate-300 px-3 py-2 text-slate-700 leading-relaxed">
                       {u.lessons.map((l) => `${l.lessonNumber}. ${l.title}`).join(' · ')}
@@ -347,6 +700,7 @@ export const BookletPdfView: React.FC = () => {
             </table>
           </div>
         </section>
+        )}
 
         {/* 3. الوحدات والدروس */}
         {visibleUnits.map((unit) => {
@@ -354,7 +708,7 @@ export const BookletPdfView: React.FC = () => {
           const unitQA: { lessonTitle: string; q: PracticeQuestion }[] = [];
 
           return (
-            <section key={unit.id} className="print-page-break space-y-6">
+            <section key={unit.id} id={`booklet-unit-${unit.id}`} className="print-page-break space-y-6 scroll-mt-20">
               {/* ترويسة الوحدة */}
               <div className="rounded-xl bg-teal-700 text-white px-5 py-4 space-y-1">
                 <h2 className="text-xl font-extrabold">
@@ -381,7 +735,19 @@ export const BookletPdfView: React.FC = () => {
                       <h3 className="text-base sm:text-lg font-extrabold text-sky-900">
                         الدرس {idx + 1}: {lesson.title}
                       </h3>
-                      <span className="text-xs font-bold text-sky-800">{lesson.pageRef}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-sky-800">{lesson.pageRef}</span>
+                        {onOpenLesson && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenLesson(unit.id, lesson.lessonId)}
+                            className="no-print inline-flex items-center gap-1 rounded-lg bg-teal-700 hover:bg-teal-800 text-white px-2.5 py-1 text-[11px] font-bold transition-colors cursor-pointer"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>فتح الدرس والمختبر 3D</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* أولاً: التأسيس والخلفية العلمية */}
@@ -451,12 +817,12 @@ export const BookletPdfView: React.FC = () => {
                             <ChemText text={c.extraExplanation} />
                           </p>
                           {c.chemEquationLatex && (
-                            <div className="rounded-lg bg-slate-900 text-white px-3 py-2 text-center overflow-x-auto">
+                            <div className="rounded-lg bg-slate-50 border border-slate-300 text-slate-900 px-3 py-2 text-center overflow-x-auto">
                               <MathBlock latex={c.chemEquationLatex} display />
                             </div>
                           )}
                           {c.formulaLatex && (
-                            <div className="rounded-lg bg-slate-900 text-white px-3 py-2 text-center overflow-x-auto">
+                            <div className="rounded-lg bg-slate-50 border border-slate-300 text-slate-900 px-3 py-2 text-center overflow-x-auto">
                               <MathBlock latex={c.formulaLatex} display />
                             </div>
                           )}
@@ -546,7 +912,7 @@ export const BookletPdfView: React.FC = () => {
                         <ChemText text={lesson.step4Conclude.summaryLaw} />
                       </p>
                       {lesson.step4Conclude.lawLatex && (
-                        <div className="rounded-lg bg-slate-900 text-white px-3 py-2 text-center overflow-x-auto">
+                        <div className="rounded-lg bg-slate-50 border border-slate-300 text-slate-900 px-3 py-2 text-center overflow-x-auto">
                           <MathBlock latex={lesson.step4Conclude.lawLatex} display />
                         </div>
                       )}
@@ -652,7 +1018,7 @@ export const BookletPdfView: React.FC = () => {
         })}
 
         {/* 4. الملحق الختامي: الاختبار الوزاري الشامل + ورقة التظليل + نموذج الإجابة */}
-        {includeExam && (
+        {showExamSection && (
           <section className="print-page-break space-y-5">
             <div className="text-center space-y-1 border-b-2 border-teal-700 pb-3">
               <h2 className="text-xl font-extrabold text-teal-800">
@@ -755,10 +1121,45 @@ export const BookletPdfView: React.FC = () => {
             إعداد وتطوير: {AUTHOR_NAME} · للتواصل وإبداء الملاحظات أو الدعم: {AUTHOR_PHONE}
           </div>
           <div className="text-sky-800 font-semibold" dir="ltr">
-            {vercelUrl || DEFAULT_VERCEL_URL}
+            {displayUrl}
           </div>
         </footer>
       </article>
+
+      {/* شريط التنقل السفلي في وضع القراءة داخل التطبيق */}
+      {viewMode === 'reader' && (
+        <div className="no-print flex items-center justify-between gap-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/70 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-4">
+          <button
+            type="button"
+            disabled={currentReaderIdx <= 0}
+            onClick={() => currentReaderIdx > 0 && goToReaderPage(readerOrder[currentReaderIdx - 1])}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight className="w-4 h-4" />
+            <span>السابق</span>
+          </button>
+
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-300 text-center">
+            {readerPage === 'cover'
+              ? 'الغلاف والفهرس'
+              : readerPage === 'exam'
+                ? 'الاختبار الوزاري الشامل'
+                : `الوحدة ${readerPage} من 16`}
+          </span>
+
+          <button
+            type="button"
+            disabled={currentReaderIdx >= readerOrder.length - 1}
+            onClick={() =>
+              currentReaderIdx < readerOrder.length - 1 && goToReaderPage(readerOrder[currentReaderIdx + 1])
+            }
+            className="inline-flex items-center gap-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 text-xs sm:text-sm font-bold disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
+          >
+            <span>التالي</span>
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

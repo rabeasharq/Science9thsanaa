@@ -12,7 +12,14 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['icon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png'],
+        includeAssets: [
+          'icon.svg',
+          'apple-touch-icon.png',
+          'pwa-192x192.png',
+          'pwa-512x512.png',
+          'pwa-maskable-512x512.png',
+          'malzama-science9-yemen.docx',
+        ],
         manifest: {
           id: '/',
           name: 'المختبر التفاعلي والكتاب الذكي - علوم الصف التاسع',
@@ -48,7 +55,8 @@ export default defineConfig(() => {
         },
         workbox: {
           maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,docx}'],
+          navigateFallbackDenylist: [/\.docx$/i],
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -101,6 +109,20 @@ export default defineConfig(() => {
           if (fs.existsSync(distDir) && fs.existsSync(srcAssets)) {
             fs.cpSync(srcAssets, distAssets, {recursive: true, force: true});
           }
+        },
+      },
+      {
+        name: 'docx-mime-header',
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url && req.url.split('?')[0].endsWith('.docx')) {
+              res.setHeader(
+                'Content-Type',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+              );
+            }
+            next();
+          });
         },
       },
     ],

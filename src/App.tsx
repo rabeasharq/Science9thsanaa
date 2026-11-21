@@ -116,8 +116,8 @@ const NAV_ITEMS: {
   },
   {
     id: 'booklet',
-    label: 'الملزمة الشاملة (PDF)',
-    hint: 'كتاب تفاعلي للطباعة A4 وحفظ PDF و Word',
+    label: 'الملزمة الشاملة (قراءة و PDF)',
+    hint: 'افتح الملزمة داخل التطبيق أو احفظها PDF و Word',
     icon: FileText,
     tone: 'bg-teal-50 text-teal-700 dark:bg-teal-950/70 dark:text-teal-300',
   },
@@ -516,7 +516,7 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'booklet' && <BookletPdfView />}
+        {activeTab === 'booklet' && <BookletPdfView onOpenLesson={handleOpenLesson} />}
 
         {activeTab === 'exam' && (
           <MinisterialExamSimulator

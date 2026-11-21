@@ -48,7 +48,7 @@ import { ENRICHED_PART_1 } from './enrichedPart1';
 import { ENRICHED_PART_2 } from './enrichedPart2';
 import { EnrichedLessonBookletData } from './enrichedTypes';
 
-const VERCEL_APP_URL = 'https://interactive-science-lab-9th.vercel.app';
+const VERCEL_APP_URL = 'https://Science9thsanaa.vercel.app';
 const AUTHOR_NAME = 'الأستاذ إبراهيم أحمد متاش';
 const AUTHOR_PHONE = '779424090';
 const APP_TITLE = 'المختبر التفاعلي والكتاب الذكي - علوم الصف التاسع (المنهج اليمني)';
@@ -86,6 +86,51 @@ const ENRICHED_MAP: Record<string, EnrichedLessonBookletData> = {
 
 const FONT_AR = 'Cairo';
 
+const WORD_SUB_MAP: Record<string, string> = {
+  '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
+  '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9',
+};
+
+const WORD_SUP_MAP: Record<string, string> = {
+  '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4',
+  '₅': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9',
+  '⁺': '+', '⁻': '-',
+};
+
+function makeRun(
+  text: string,
+  opts: {
+    sizeHalfPt?: number;
+    bold?: boolean;
+    color?: string;
+    italics?: boolean;
+    subScript?: boolean;
+    superScript?: boolean;
+    rightToLeft?: boolean;
+  }
+): TextRun {
+  const {
+    sizeHalfPt = 22,
+    bold = false,
+    color = '1E293B',
+    italics = false,
+    subScript = false,
+    superScript = false,
+    rightToLeft = true,
+  } = opts;
+  return new TextRun({
+    text,
+    bold,
+    italics,
+    color,
+    size: sizeHalfPt,
+    subScript,
+    superScript,
+    font: { ascii: FONT_AR, hAnsi: FONT_AR, cs: FONT_AR, eastAsia: FONT_AR },
+    rightToLeft,
+  });
+}
+
 function arRun(
   text: string,
   opts: {
@@ -95,16 +140,138 @@ function arRun(
     italics?: boolean;
   } = {}
 ): TextRun {
-  const { sizeHalfPt = 22, bold = false, color = '1E293B', italics = false } = opts;
-  return new TextRun({
-    text: formatChemProse(text),
-    bold,
-    italics,
-    color,
-    size: sizeHalfPt,
-    font: { ascii: FONT_AR, hAnsi: FONT_AR, cs: FONT_AR, eastAsia: FONT_AR },
-    rightToLeft: true,
-  });
+  return makeRun(formatChemProse(text), opts);
+}
+
+/**
+ * يحوّل النص العربي المخلوط بصيغ كيميائية أو أيونات (مثل H2O, Ca3(PO4)2, H₂SO₄, H+, OH-, PO4^3-, م²)
+ * إلى مصفوفة TextRun بحيث تكون الأرقام السفلية أصغر وأسفل قليلاً (subScript: true) في مستند Word.
+ */
+function arRuns(
+  rawText: string,
+  opts: {
+    sizeHalfPt?: number;
+    bold?: boolean;
+    color?: string;
+    italics?: boolean;
+  } = {}
+): TextRun[] {
+  const text = rawText.replace(/<=>/g, '⇌').replace(/-->|->|⟶/g, '→');
+  const runs: TextRun[] = [];
+  const chemRegex =
+    /(?:\d*(?=[A-Z]))?[A-Z][A-Za-z0-9₀-₉⁰-⁹⁺⁻()^]*(?:\^[\{\}0-9+\-]+|[+-](?![A-Za-z0-9]))?[↑↓]?|[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻₀₁₂₃₄₅₆₇₈₉]+/g;
+
+  let lastIdx = 0;
+  let match: RegExpExecArray | null;
+
+  const pushArabic = (chunk: string) => {
+    if (!chunk) return;
+    runs.push(makeRun(chunk, { ...opts, rightToLeft: true }));
+  };
+
+  while ((match = chemRegex.exec(text)) !== null) {
+    const tok = match[0];
+    // تجاهل الكلمات الإنجليزية البسيطة بدون أرقام أو شحنات (ما عدا رموز الوحدات/العناصر)
+    const hasSubOrSup = /[₀-₉⁰-⁹⁺⁻^]/.test(tok) || /[A-Za-z)][0-9]+/.test(tok) || /[A-Za-z0-9)][+-]$/.test(tok);
+    if (!hasSubOrSup) continue;
+
+    if (match.index > lastIdx) {
+      pushArabic(text.slice(lastIdx, match.index));
+    }
+
+    const isPureUnicodeMarks = /^[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻₀₁₂₃₄₅₆₇₈₉]+$/.test(tok);
+    if (isPureUnicodeMarks) {
+      for (const ch of tok) {
+        if (WORD_SUB_MAP[ch]) {
+          runs.push(makeRun(WORD_SUB_MAP[ch], { ...opts, subScript: true, rightToLeft: true }));
+        } else if (WORD_SUP_MAP[ch]) {
+          runs.push(makeRun(WORD_SUP_MAP[ch], { ...opts, superScript: true, rightToLeft: true }));
+        }
+      }
+      lastIdx = chemRegex.lastIndex;
+      continue;
+    }
+
+    // تحليل الصيغة اللاتينية (مع بقاء المعامل المتقدم في الحجم الطبيعي)
+    let buf = '';
+    const flushLat = () => {
+      if (buf) {
+        runs.push(makeRun(buf, { ...opts, rightToLeft: false }));
+        buf = '';
+      }
+    };
+    let i = 0;
+    while (i < tok.length) {
+      const ch = tok[i];
+      if (ch === '^') {
+        if (tok[i + 1] === '{') {
+          const close = tok.indexOf('}', i + 2);
+          if (close !== -1) {
+            flushLat();
+            const sup = [...tok.slice(i + 2, close)].map((c) => WORD_SUP_MAP[c] ?? c).join('');
+            runs.push(makeRun(sup, { ...opts, superScript: true, rightToLeft: false }));
+            i = close + 1;
+            continue;
+          }
+        } else {
+          const m = tok.slice(i + 1).match(/^([0-9]+[+\-]?|[+\-])/);
+          if (m) {
+            flushLat();
+            runs.push(makeRun(m[1], { ...opts, superScript: true, rightToLeft: false }));
+            i += 1 + m[1].length;
+            continue;
+          }
+        }
+      }
+      if (WORD_SUB_MAP[ch]) {
+        let j = i;
+        let sub = '';
+        while (j < tok.length && WORD_SUB_MAP[tok[j]]) {
+          sub += WORD_SUB_MAP[tok[j]];
+          j++;
+        }
+        flushLat();
+        runs.push(makeRun(sub, { ...opts, subScript: true, rightToLeft: false }));
+        i = j;
+        continue;
+      }
+      if (WORD_SUP_MAP[ch]) {
+        let j = i;
+        let sup = '';
+        while (j < tok.length && WORD_SUP_MAP[tok[j]]) {
+          sup += WORD_SUP_MAP[tok[j]];
+          j++;
+        }
+        flushLat();
+        runs.push(makeRun(sup, { ...opts, superScript: true, rightToLeft: false }));
+        i = j;
+        continue;
+      }
+      if (/[0-9]/.test(ch) && i > 0 && /[A-Za-z)\]]/.test(tok[i - 1]) && tok.slice(Math.max(0, i - 2), i) !== 'pH') {
+        let j = i;
+        while (j < tok.length && /[0-9]/.test(tok[j])) j++;
+        flushLat();
+        runs.push(makeRun(tok.slice(i, j), { ...opts, subScript: true, rightToLeft: false }));
+        i = j;
+        continue;
+      }
+      if ((ch === '+' || ch === '-') && i === tok.length - 1 && /[A-Za-z0-9₀-₉)]/.test(tok[i - 1])) {
+        flushLat();
+        runs.push(makeRun(ch, { ...opts, superScript: true, rightToLeft: false }));
+        i++;
+        continue;
+      }
+      buf += ch;
+      i++;
+    }
+    flushLat();
+    lastIdx = chemRegex.lastIndex;
+  }
+
+  if (lastIdx < text.length) {
+    pushArabic(text.slice(lastIdx));
+  }
+  return runs.length ? runs : [makeRun(text, opts)];
 }
 
 function arPara(
@@ -136,7 +303,7 @@ function arPara(
   } = opts;
 
   const children =
-    typeof runs === 'string' ? [arRun(runs, { bold, color, sizeHalfPt })] : runs;
+    typeof runs === 'string' ? arRuns(runs, { bold, color, sizeHalfPt }) : runs;
 
   return new Paragraph({
     bidirectional: true,
@@ -152,9 +319,9 @@ function arPara(
 function bulletPara(text: string, opts: { color?: string; boldPrefix?: string } = {}): Paragraph {
   const runs: TextRun[] = [arRun('•  ', { bold: true, color: opts.color ?? '0F766E' })];
   if (opts.boldPrefix) {
-    runs.push(arRun(opts.boldPrefix + ' ', { bold: true, color: opts.color ?? '0F172A' }));
+    runs.push(...arRuns(opts.boldPrefix + ' ', { bold: true, color: opts.color ?? '0F172A' }));
   }
-  runs.push(arRun(text, { color: '1E293B' }));
+  runs.push(...arRuns(text, { color: '1E293B' }));
   return arPara(runs, { spacingBefore: 35, spacingAfter: 65 });
 }
 
@@ -229,7 +396,23 @@ async function main() {
     ...buildPhysicsSpaceDiagrams(),
     ...buildBioDiagrams(),
   };
-  console.log(`   Rendered ${Object.keys(diagrams).length} multi-panel illustrations.`);
+  const diagOutDir = path.resolve(process.cwd(), 'public/booklet-diagrams');
+  fs.mkdirSync(diagOutDir, { recursive: true });
+  const diagIndexEntries: Record<string, { src: string; caption: string }> = {};
+  for (const [id, d] of Object.entries(diagrams)) {
+    fs.writeFileSync(path.join(diagOutDir, `${id}.png`), d.png);
+    diagIndexEntries[id] = { src: `/booklet-diagrams/${id}.png`, caption: d.caption };
+  }
+  const indexTsPath = path.resolve(process.cwd(), 'src/data/booklet/diagramsIndex.ts');
+  const indexTsContent = `export interface BookletDiagramMeta {
+  src: string;
+  caption: string;
+}
+
+export const BOOKLET_DIAGRAMS: Record<string, BookletDiagramMeta> = ${JSON.stringify(diagIndexEntries, null, 2)};
+`;
+  fs.writeFileSync(indexTsPath, indexTsContent, 'utf-8');
+  console.log(`   Rendered ${Object.keys(diagrams).length} multi-panel illustrations & synced diagramsIndex.ts.`);
 
   const qrPng = await generateQrPng(VERCEL_APP_URL);
   const children: (Paragraph | Table)[] = [];
@@ -285,7 +468,7 @@ async function main() {
       [
         bulletPara('تغطي كامل المنهج اليمني للصف التاسع بجزأيه الأول والثاني (16 وحدة — 53 درساً) بشرح سلس ووافٍ لا يحتاج إلى معلم.'),
         bulletPara('تبدأ كل درس ببطاقة «تأسيس سريع قبل أن تبدأ» لمعالجة الضعف العلمي وبناء الخلفية اللازمة لفهم الدرس الجديد.'),
-        bulletPara('تضم 22 لوحة رسوم توضيحية مشروحة وخطوات عملية للتجارب المخبرية لتعويض غياب المختبرات والهواتف في المناطق النائية.'),
+        bulletPara(`تضم ${Object.keys(diagrams).length} لوحة رسوم توضيحية ملونة ومرتبة خطوة بخطوة بجميع البيانات لتعويض غياب المختبرات والهواتف في المناطق النائية.`),
         bulletPara('تشمل جميع القوانين والمسائل المحلولة خطوة بخطوة، والمصائد الوزارية المعتمدة في نماذج 1446هـ، واختباراً وزارياً كاملاً من 50 فقرة (80 درجة) مع الحلول المفسرة.'),
       ],
       { fill: 'F0FDFA', border: '0F766E', titleColor: '0F766E' }
@@ -561,13 +744,13 @@ async function main() {
           'ثانياً: تمهيد من الواقع وسؤال استكشافي',
           [
             arPara(lesson.step1Discover.scenario, { spacingBefore: 0, spacingAfter: 70 }),
-            arPara([arRun('السؤال: ', { bold: true, color: '0F766E' }), arRun(lesson.step1Discover.question, { bold: true })], {
+            arPara([arRun('السؤال: ', { bold: true, color: '0F766E' }), ...arRuns(lesson.step1Discover.question, { bold: true })], {
               spacingAfter: 60,
             }),
             arPara(
               [
                 arRun('الجواب والتفسير العلمي: ', { bold: true, color: '15803D' }),
-                arRun(lesson.step1Discover.revealExplanation),
+                ...arRuns(lesson.step1Discover.revealExplanation),
               ],
               { spacingAfter: 0 }
             ),
@@ -599,11 +782,11 @@ async function main() {
         const conceptParas: Paragraph[] = [
           arPara([
             arRun('نص الكتاب وتفصيله: ', { bold: true, color: '0F172A' }),
-            arRun(concept.textbookContent),
+            ...arRuns(concept.textbookContent),
           ], { spacingBefore: 0, spacingAfter: 70 }),
           arPara([
             arRun('توضيح المعلم المبسط: ', { bold: true, color: '0F766E' }),
-            arRun(concept.extraExplanation),
+            ...arRuns(concept.extraExplanation),
           ], { spacingBefore: 0, spacingAfter: 70 }),
         ];
 
@@ -611,7 +794,7 @@ async function main() {
           conceptParas.push(
             arPara([
               arRun('المعادلة الكيميائية: ', { bold: true, color: '1D4ED8' }),
-              arRun(latexToWordText(concept.chemEquationLatex), { bold: true, color: '1E3A8A' }),
+              ...arRuns(latexToWordText(concept.chemEquationLatex), { bold: true, color: '1E3A8A' }),
             ], { spacingAfter: 60 })
           );
         }
@@ -619,7 +802,7 @@ async function main() {
           conceptParas.push(
             arPara([
               arRun('القانون الرياضي: ', { bold: true, color: '1D4ED8' }),
-              arRun(latexToWordText(concept.formulaLatex), { bold: true, color: '1E3A8A' }),
+              ...arRuns(latexToWordText(concept.formulaLatex), { bold: true, color: '1E3A8A' }),
             ], { spacingAfter: 60 })
           );
         }
@@ -627,7 +810,7 @@ async function main() {
           conceptParas.push(
             arPara([
               arRun('تنبيه وزاري هام: ', { bold: true, color: 'B45309' }),
-              arRun(concept.ministerialNuance, { bold: true, color: '92400E' }),
+              ...arRuns(concept.ministerialNuance, { bold: true, color: '92400E' }),
             ], { spacingAfter: 0 })
           );
         }
@@ -652,12 +835,12 @@ async function main() {
       if (enriched?.experiment) {
         const exp = enriched.experiment;
         const expParas: Paragraph[] = [
-          arPara([arRun('الأدوات المطلوبة: ', { bold: true, color: '0F172A' }), arRun(exp.tools)], { spacingAfter: 60 }),
+          arPara([arRun('الأدوات المطلوبة: ', { bold: true, color: '0F172A' }), ...arRuns(exp.tools)], { spacingAfter: 60 }),
           arPara('خطوات تنفيذ التجربة:', { bold: true, color: '0F766E', spacingAfter: 40 }),
           ...exp.steps.map((st, idx) => arPara(`${idx + 1}. ${st}`, { spacingBefore: 15, spacingAfter: 40 })),
-          arPara([arRun('المشاهدة: ', { bold: true, color: '0369A1' }), arRun(exp.observation)], { spacingAfter: 50 }),
-          arPara([arRun('التفسير العلمي: ', { bold: true, color: '7C3AED' }), arRun(exp.scientificExplanation)], { spacingAfter: 50 }),
-          arPara([arRun('الاستنتاج النهائي: ', { bold: true, color: '15803D' }), arRun(exp.conclusion, { bold: true })], { spacingAfter: 0 }),
+          arPara([arRun('المشاهدة: ', { bold: true, color: '0369A1' }), ...arRuns(exp.observation)], { spacingAfter: 50 }),
+          arPara([arRun('التفسير العلمي: ', { bold: true, color: '7C3AED' }), ...arRuns(exp.scientificExplanation)], { spacingAfter: 50 }),
+          arPara([arRun('الاستنتاج النهائي: ', { bold: true, color: '15803D' }), ...arRuns(exp.conclusion, { bold: true })], { spacingAfter: 0 }),
         ];
         children.push(
           calloutBox(`رابعاً: مختبر الورق — ${exp.title}`, expParas, {
@@ -683,7 +866,7 @@ async function main() {
 
       // 6. Laws, Conclusions & Worked Numerical Examples
       const lawParas: Paragraph[] = [
-        arPara([arRun('القاعدة الذهبية للدرس: ', { bold: true, color: '0F172A' }), arRun(lesson.step4Conclude.summaryLaw)], {
+        arPara([arRun('القاعدة الذهبية للدرس: ', { bold: true, color: '0F172A' }), ...arRuns(lesson.step4Conclude.summaryLaw)], {
           spacingAfter: 60,
         }),
       ];
@@ -786,8 +969,8 @@ async function main() {
             arPara(
               [
                 arRun(`س${idx + 1} (${lessonTitle}): `, { bold: true, color: '0F172A', sizeHalfPt: 20 }),
-                arRun(`الإجابة: (${q.options[q.correctIndex]}) — `, { bold: true, color: '15803D', sizeHalfPt: 20 }),
-                arRun(q.explanation, { color: '334155', sizeHalfPt: 19 }),
+                ...arRuns(`الإجابة: (${q.options[q.correctIndex]}) — `, { bold: true, color: '15803D', sizeHalfPt: 20 }),
+                ...arRuns(q.explanation, { color: '334155', sizeHalfPt: 19 }),
               ],
               { spacingBefore: 20, spacingAfter: 45 }
             )
@@ -926,8 +1109,8 @@ async function main() {
       arPara(
         [
           arRun(`س${idx + 1} (الوحدة ${q.unitId}): `, { bold: true, color: '0F172A', sizeHalfPt: 19 }),
-          arRun(`${q.options[q.correctIndex]} — `, { bold: true, color: '15803D', sizeHalfPt: 19 }),
-          arRun(q.explanation, { color: '334155', sizeHalfPt: 19 }),
+          ...arRuns(`${q.options[q.correctIndex]} — `, { bold: true, color: '15803D', sizeHalfPt: 19 }),
+          ...arRuns(q.explanation, { color: '334155', sizeHalfPt: 19 }),
         ],
         { spacingBefore: 20, spacingAfter: 45 }
       )
