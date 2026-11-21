@@ -17,6 +17,7 @@ import {
   Share2,
   Sparkles,
   Type,
+  ZoomIn,
 } from 'lucide-react';
 import { CURRICULUM_UNITS } from '../../data/curriculumIndex';
 import { UNIT_01_LESSONS } from '../../data/units/unit01Solutions';
@@ -40,6 +41,7 @@ import { EnrichedLessonBookletData } from '../../data/booklet/enrichedTypes';
 import { BOOKLET_DIAGRAMS } from '../../data/booklet/diagramsIndex';
 import { DetailedLessonContent, PracticeQuestion } from '../../types/curriculum';
 import { ChemText, MathBlock } from '../common/ChemText';
+import { DiagramLightbox, ZoomableDiagramItem } from '../common/DiagramLightbox';
 import { generateBookletDocxBlob } from '../../utils/exportBookletDocx';
 
 const DEFAULT_VERCEL_URL = 'https://Science9thsanaa.vercel.app';
@@ -105,6 +107,7 @@ export const BookletPdfView: React.FC<BookletPdfViewProps> = ({ onOpenLesson }) 
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [docxBusy, setDocxBusy] = useState<boolean>(false);
   const [docxError, setDocxError] = useState<string | null>(null);
+  const [zoomedDiagram, setZoomedDiagram] = useState<ZoomableDiagramItem | null>(null);
   const [readyDocx, setReadyDocx] = useState<{
     url: string;
     blob: Blob;
@@ -721,10 +724,13 @@ export const BookletPdfView: React.FC<BookletPdfViewProps> = ({ onOpenLesson }) 
 
               {unitLessons.map((lesson, idx) => {
                 const enriched = ENRICHED_MAP[lesson.lessonId];
-                const diagramMeta =
-                  enriched?.diagramId && BOOKLET_DIAGRAMS[enriched.diagramId]
-                    ? BOOKLET_DIAGRAMS[enriched.diagramId]
-                    : undefined;
+                const diagramIds = [
+                  ...(enriched?.diagramId ? [enriched.diagramId] : []),
+                  ...(enriched?.extraDiagramIds ?? []),
+                ];
+                const lessonDiagrams = diagramIds
+                  .map((id) => BOOKLET_DIAGRAMS[id])
+                  .filter(Boolean);
                 const lessonQs = [...lesson.step5Verify, ...lesson.step6Master];
                 lessonQs.forEach((q) => unitQA.push({ lessonTitle: lesson.title, q }));
 
@@ -836,19 +842,34 @@ export const BookletPdfView: React.FC<BookletPdfViewProps> = ({ onOpenLesson }) 
                       ))}
                     </div>
 
-                    {/* الرسم التوضيحي المطبوع */}
-                    {diagramMeta && (
-                      <figure className="print-avoid-break rounded-xl border border-slate-200 bg-white p-3 text-center space-y-2">
+                    {/* الرسوم التوضيحية المطبوعة */}
+                    {lessonDiagrams.map((diag, diagIdx) => (
+                      <figure
+                        key={`${diag.src}-${diagIdx}`}
+                        className="print-avoid-break rounded-xl border border-slate-200 bg-white p-3 text-center space-y-2"
+                      >
+                        <div className="no-print flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setZoomedDiagram(diag)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-teal-200 bg-teal-50 hover:bg-teal-100 px-2.5 py-1 text-[11px] font-bold text-teal-800 cursor-pointer transition-colors"
+                          >
+                            <ZoomIn className="w-3.5 h-3.5" />
+                            <span>تكبير اللوحة لقراءة البيانات</span>
+                          </button>
+                        </div>
                         <img
-                          src={diagramMeta.src}
-                          alt={diagramMeta.caption}
-                          className="mx-auto max-w-full w-[640px] h-auto rounded-lg"
+                          src={diag.src}
+                          alt={diag.caption}
+                          onClick={() => setZoomedDiagram(diag)}
+                          title="انقر للتكبير"
+                          className="mx-auto max-w-full w-[640px] h-auto rounded-lg cursor-zoom-in"
                         />
                         <figcaption className="text-xs font-bold text-teal-800">
-                          {diagramMeta.caption}
+                          {diag.caption}
                         </figcaption>
                       </figure>
-                    )}
+                    ))}
 
                     {/* رابعاً: مختبر الورق (التجربة العملية بالخطوات) */}
                     {enriched?.experiment ? (
@@ -1160,6 +1181,7 @@ export const BookletPdfView: React.FC<BookletPdfViewProps> = ({ onOpenLesson }) 
           </button>
         </div>
       )}
+      <DiagramLightbox diagram={zoomedDiagram} onClose={() => setZoomedDiagram(null)} />
     </div>
   );
 };

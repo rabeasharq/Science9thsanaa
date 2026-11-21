@@ -21,6 +21,8 @@ export interface EnrichedLessonBookletData {
   experiment?: EnrichedExperimentGuide;
   /** مسائل محلولة خطوة بخطوة أو مقارنة تطبيقية */
   workedExamples?: EnrichedWorkedExample[];
-  /** معرف الرسم التوضيحي المرتبط إن وُجد */
+  /** معرف الرسم التوضيحي الرئيسي للدرس */
   diagramId?: string;
+  /** معرفات رسوم توضيحية إضافية للدرس (مثل الجهاز التناسلي للذكر والأنثى أو الجهاز البولي الكامل) */
+  extraDiagramIds?: string[];
 }

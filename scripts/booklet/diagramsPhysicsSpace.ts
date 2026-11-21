@@ -802,5 +802,177 @@ export function buildPhysicsSpaceDiagrams(): Record<string, { png: Buffer; capti
     'شكل (13-3): مبدأ عمل الخلية الشمسية الكهروضوئية (n/p) ومكونات المنظومة الشمسية الكهربائية.'
   );
 
+  // ==================== u11-l4: تطبيقات الخاصية الشعرية وارتفاع الماء في الأنابيب الضيقة ====================
+  add(
+    'u11-l4',
+    820,
+    400,
+    'الخاصية الشعرية: علاقة القطر بالارتفاع وأهم أربعة تطبيقات حياتية وزراعية في المنهج',
+    `
+      ${[
+        {
+          x: 612,
+          title: '1. أوعية الخشب بالنبات',
+          c: '#15803d',
+          bg: '#f0fdf4',
+          p1: 'صعود الماء والأملاح',
+          p2: 'من التربة والجذور إلى قمم',
+          p3: 'الأشجار عبر أنابيب الخشب الضيقة',
+          draw: (cx: number) => `
+            <rect x="${cx - 10}" y="160" width="20" height="62" fill="#92400e" stroke="#78350f"/>
+            <circle cx="${cx}" cy="144" r="28" fill="#4ade80" stroke="#15803d" stroke-width="2"/>
+            ${svgArrow(cx, 218, cx, 152, 'blue', 2.4, true)}
+          `,
+        },
+        {
+          x: 416,
+          title: '2. فتيلة المصباح والكحول',
+          c: '#b45309',
+          bg: '#fffbeb',
+          p1: 'ارتفاع الكيروسين (الوقود)',
+          p2: 'بين مسام الفتيلة القطنية',
+          p3: 'باستمرار لتغذية الشعلة',
+          draw: (cx: number) => `
+            <rect x="${cx - 26}" y="182" width="52" height="40" rx="6" fill="#fde047" stroke="#ca8a04" stroke-width="2"/>
+            <rect x="${cx - 5}" y="154" width="10" height="58" fill="#f8fafc" stroke="#64748b"/>
+            <path d="M${cx - 8} 154 Q${cx} 130 ${cx + 8} 154 Z" fill="url(#grad-flame)"/>
+          `,
+        },
+        {
+          x: 220,
+          title: '3. المناديل والإسفنج',
+          c: '#0369a1',
+          bg: '#eff6ff',
+          p1: 'تعمل المسام الدقيقة',
+          p2: 'كأنابيب شعرية متشابكة',
+          p3: 'تمتص الماء والسوائل فوراً',
+          draw: (cx: number) => `
+            <rect x="${cx - 28}" y="196" width="56" height="24" rx="4" fill="#38bdf8" stroke="#0284c7"/>
+            <rect x="${cx - 14}" y="140" width="28" height="66" rx="3" fill="#ffffff" stroke="#0369a1" stroke-width="2"/>
+            <rect x="${cx - 12}" y="168" width="24" height="36" fill="#bae6fd"/>
+            ${svgArrow(cx, 200, cx, 154, 'blue', 2)}
+          `,
+        },
+        {
+          x: 24,
+          title: '4. حرث التربة (وزاري!)',
+          c: '#dc2626',
+          bg: '#fef2f2',
+          p1: 'يُقطّع المسام الشعرية السطحية',
+          p2: 'فيمنع صعود ماء التربة للسطح',
+          p3: 'وتبخره، فيحفظ رطوبة الجذور ✓',
+          draw: (cx: number) => `
+            <rect x="${cx - 34}" y="182" width="68" height="40" rx="4" fill="#fed7aa" stroke="#b45309"/>
+            <path d="M${cx - 28} 182 L${cx - 16} 168 L${cx} 182 L${cx + 16} 168 L${cx + 28} 182" fill="none" stroke="#92400e" stroke-width="3"/>
+            <line x1="${cx - 18}" y1="154" x2="${cx + 18}" y2="178" stroke="#dc2626" stroke-width="2.4"/>
+          `,
+        },
+      ].map((c) => {
+        const cx = c.x + 92;
+        return `
+          <rect x="${c.x}" y="66" width="184" height="284" rx="10" fill="${c.bg}" stroke="${c.c}" stroke-width="1.8"/>
+          <rect x="${c.x}" y="66" width="184" height="36" rx="8" fill="${c.c}"/>
+          ${svgTxt(cx, 90, c.title, { bold: true, size: 12.2, color: '#ffffff' })}
+          ${c.draw(cx)}
+          ${svgTxt(cx, 256, c.p1, { size: 11, bold: true, color: c.c })}
+          ${svgTxt(cx, 282, c.p2, { size: 10.5, color: '#1e293b' })}
+          ${svgTxt(cx, 308, c.p3, { size: 10.2, bold: true, color: '#334155' })}
+        `;
+      }).join('')}
+    `,
+    'شكل (11-4أ): ارتفاع الماء في الأنابيب الضيقة وتطبيقات الخاصية الشعرية في النبات والمنزل والزراعة.',
+    'قاعدة: كلما قل قطر الأنبوب الشعري زاد ارتفاع الماء فيه (علاقة عكسية بين القطر والارتفاع)'
+  );
+
+  // ==================== u11-l6: لزوجة السوائل وأثر الحرارة ====================
+  add(
+    'u11-l6',
+    820,
+    400,
+    'تجربة قياس اللزوجة في السوائل، وتأثير درجة الحرارة، وزيوت تشحيم المحركات',
+    `
+      <!-- Right: 3 Graduated Cylinders Ball Drop Test -->
+      <rect x="420" y="60" width="380" height="296" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.8"/>
+      ${svgStepBadge(610, 72, 300, '1. مقارنة اللزوجة بسقوط الكرات المعدنية', '#b45309', '#ffffff')}
+      ${[
+        { x: 696, name: 'ماء', fill: '#bae6fd', by: 266, speed: 'سقوط سريع', note: 'لزوجة قليلة جداً', c: '#0284c7' },
+        { x: 582, name: 'زيت', fill: '#fde047', by: 204, speed: 'سرعة متوسطة', note: 'لزوجة متوسطة', c: '#ca8a04' },
+        { x: 468, name: 'عسل', fill: '#f59e0b', by: 148, speed: 'سقوط بطيء', note: 'لزوجة عالية جداً', c: '#92400e' },
+      ].map((cyl) => `
+        <rect x="${cyl.x}" y="114" width="54" height="176" rx="8" fill="${cyl.fill}" stroke="#475569" stroke-width="2"/>
+        <circle cx="${cyl.x + 27}" cy="${cyl.by}" r="8" fill="#1e293b"/>
+        ${svgArrow(cyl.x + 27, 122, cyl.x + 27, cyl.by - 12, 'slate', 1.8)}
+        ${svgTxt(cyl.x + 27, 310, cyl.name + ': ' + cyl.speed, { size: 10.5, bold: true, color: cyl.c })}
+        ${svgTxt(cyl.x + 27, 330, cyl.note, { size: 9.8, color: '#334155' })}
+      `).join('')}
+
+      <!-- Left Top: Temperature Effect -->
+      <rect x="20" y="60" width="380" height="142" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.8"/>
+      ${svgStepBadge(210, 72, 290, '2. أثر الحرارة في لزوجة السوائل (علاقة عكسية)', '#dc2626', '#ffffff')}
+      ${svgTxt(210, 128, 'التعريف: احتكاك داخلي بين طبقات السائل يعيق انزلاقها', { size: 11, bold: true, color: '#0f172a' })}
+      ${svgTxt(210, 154, 'بالتسخين ← تتباعد الجزيئات وتقل اللزوجة ويسهل الجريان ✓', { size: 11, bold: true, color: '#dc2626' })}
+      ${svgTxt(210, 180, 'بالتبريد ← تتقارب الجزيئات وتزداد اللزوجة ويبطؤ الجريان', { size: 10.8, bold: true, color: '#0369a1' })}
+
+      <!-- Left Bottom: Motor Oil Application -->
+      <rect x="20" y="214" width="380" height="142" rx="10" fill="#f0fdf4" stroke="#0f766e" stroke-width="1.8"/>
+      ${svgStepBadge(210, 226, 290, '3. تطبيق مهم: زيوت تشحيم المحركات', '#0f766e', '#ffffff')}
+      <circle cx="332" cy="296" r="24" fill="#cbd5e1" stroke="#334155" stroke-width="3" stroke-dasharray="7 4"/>
+      <circle cx="332" cy="296" r="9" fill="#0f766e"/>
+      ${svgTxt(164, 278, 'تقلل الاحتكاك والتآكل بين أجزاء المحرك', { size: 10.8, bold: true, color: '#0f766e' })}
+      ${svgTxt(164, 302, 'وتُختار بدرجة لزوجة تتحمل الحرارة العالية', { size: 10.5 })}
+      ${svgTxt(164, 326, 'دون أن تسيح فتتلامس المعادن الساخنة', { size: 10.2, color: '#475569' })}
+    `,
+    'شكل (11-5): قياس لزوجة السوائل (الماء والزيت والعسل)، وأثر الحرارة العكسية على اللزوجة وتطبيقها في المحركات.'
+  );
+
+  // ==================== u11-l7: الانتشار في السوائل وأثر الحرارة ومقارنة الحالات ====================
+  add(
+    'u11-l7',
+    820,
+    400,
+    'تجربة الانتشار في السوائل (الماء البارد مقابل الساخن) ومقارنة سرعة الانتشار في الحالات الثلاث',
+    `
+      <!-- Right: Cold vs Hot Diffusion Beakers -->
+      <rect x="420" y="60" width="380" height="296" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.8"/>
+      ${svgStepBadge(610, 72, 300, '1. تجربة قطرة الحبر في الماء البارد والساخن', '#1d4ed8', '#ffffff')}
+      <!-- Cold Beaker -->
+      <rect x="652" y="122" width="106" height="136" rx="8" fill="#e0f2fe" stroke="#0284c7" stroke-width="2.2"/>
+      <circle cx="705" cy="232" r="20" fill="#a855f7" fill-opacity="0.48"/>
+      <circle cx="705" cy="242" r="8" fill="#6b21a8"/>
+      ${svgTxt(705, 282, 'ماء بارد: انتشار بطيء', { size: 11, bold: true, color: '#0369a1' })}
+      ${svgTxt(705, 302, 'طاقة حركة الجزيئات أقل', { size: 10, color: '#475569' })}
+
+      <!-- Hot Beaker -->
+      <rect x="462" y="122" width="106" height="136" rx="8" fill="#d8b4fe" stroke="#7e22ce" stroke-width="2.2"/>
+      ${[
+        [480, 140], [514, 138], [548, 144],
+        [492, 166], [528, 162], [552, 174],
+        [476, 192], [510, 188], [540, 200],
+        [488, 222], [522, 218], [550, 232],
+        [478, 244], [512, 242],
+      ].map(([px, py]) => `<circle cx="${px}" cy="${py}" r="4.5" fill="#6b21a8" fill-opacity="0.85"/>`).join('')}
+      <path d="M505 278 Q515 256 525 278 Z" fill="url(#grad-flame)"/>
+      ${svgTxt(515, 294, 'ماء ساخن: انتشار سريع!', { size: 11, bold: true, color: '#dc2626' })}
+      ${svgTxt(515, 314, 'الحرارة تسرّع حركة الجزيئات', { size: 10, color: '#334155' })}
+      ${svgTxt(610, 340, 'الانتشار: انتقال الجزيئات من التركيز الأعلى ← التركيز الأقل', { size: 10.8, bold: true, color: '#1e3a8a' })}
+
+      <!-- Left: Speed comparison Gas > Liquid > Solid -->
+      <rect x="20" y="60" width="380" height="296" rx="10" fill="#f0fdf4" stroke="#0f766e" stroke-width="1.8"/>
+      ${svgStepBadge(210, 72, 300, '2. مقارنة سرعة الانتشار في حالات المادة', '#0f766e', '#ffffff')}
+      ${[
+        { y: 116, t: '1. الغازات (الأسرع إطلاقاً)', d: 'المسافات البينية شاسعة وحركة سريعة (انتشار العطر)', w: 310, bg: '#22c55e', c: '#15803d' },
+        { y: 196, t: '2. السوائل (متوسط السرعة)', d: 'المسافات متوسطة وحركة مستمرة (الحبر أو الشاي في الماء)', w: 210, bg: '#0ea5e9', c: '#0369a1' },
+        { y: 276, t: '3. المواد الصلبة (بطيء جداً)', d: 'الجزيئات متلاصقة وتهتز في مواضعها فقط', w: 96, bg: '#ef4444', c: '#b91c1c' },
+      ].map((row) => `
+        <rect x="42" y="${row.y}" width="336" height="66" rx="8" fill="#ffffff" stroke="${row.c}" stroke-width="1.5"/>
+        <rect x="56" y="${row.y + 9}" width="308" height="10" rx="5" fill="#f1f5f9"/>
+        <rect x="${364 - row.w}" y="${row.y + 9}" width="${row.w}" height="10" rx="5" fill="${row.bg}"/>
+        ${svgTxt(210, row.y + 38, row.t, { size: 11.2, bold: true, color: row.c })}
+        ${svgTxt(210, row.y + 56, row.d, { size: 9.8, color: '#334155' })}
+      `).join('')}
+    `,
+    'شكل (11-6): تجربة الانتشار في الماء البارد والساخن ومقارنة سرعة الانتشار في الغازات والسوائل والمواد الصلبة.'
+  );
+
   return out;
 }

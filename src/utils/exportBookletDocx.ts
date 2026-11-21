@@ -488,8 +488,11 @@ export async function generateBookletDocxBlob(opts: BrowserDocxOptions): Promise
   const neededDiagramIds = new Set<string>();
   for (const unit of targetUnits) {
     for (const l of LESSONS_BY_UNIT.get(unit.id) ?? []) {
-      const dId = ENRICHED_MAP[l.lessonId]?.diagramId;
-      if (dId && BOOKLET_DIAGRAMS[dId]) neededDiagramIds.add(dId);
+      const enr = ENRICHED_MAP[l.lessonId];
+      if (enr?.diagramId && BOOKLET_DIAGRAMS[enr.diagramId]) neededDiagramIds.add(enr.diagramId);
+      for (const extraId of enr?.extraDiagramIds ?? []) {
+        if (BOOKLET_DIAGRAMS[extraId]) neededDiagramIds.add(extraId);
+      }
     }
   }
 
@@ -868,33 +871,38 @@ export async function generateBookletDocxBlob(opts: BrowserDocxOptions): Promise
         );
       }
 
-      // الرسم التوضيحي
-      const diagKey = enriched?.diagramId;
-      const diag = diagKey ? diagramMap.get(diagKey) : undefined;
-      if (diag) {
-        children.push(
-          new Paragraph({
-            bidirectional: true,
-            alignment: AlignmentType.CENTER,
-            keepNext: true,
-            spacing: { before: 100, after: 50 },
-            children: [
-              new ImageRun({
-                type: 'png',
-                data: diag.img.data,
-                transformation: { width: diag.img.width, height: diag.img.height },
-              }),
-            ],
-          }),
-          arPara(diag.caption, {
-            align: AlignmentType.CENTER,
-            bold: true,
-            sizeHalfPt: 19,
-            color: '0F766E',
-            spacingBefore: 0,
-            spacingAfter: 120,
-          })
-        );
+      // الرسوم التوضيحية
+      const lessonDiagKeys = [
+        ...(enriched?.diagramId ? [enriched.diagramId] : []),
+        ...(enriched?.extraDiagramIds ?? []),
+      ];
+      for (const dKey of lessonDiagKeys) {
+        const diag = diagramMap.get(dKey);
+        if (diag) {
+          children.push(
+            new Paragraph({
+              bidirectional: true,
+              alignment: AlignmentType.CENTER,
+              keepNext: true,
+              spacing: { before: 100, after: 50 },
+              children: [
+                new ImageRun({
+                  type: 'png',
+                  data: diag.img.data,
+                  transformation: { width: diag.img.width, height: diag.img.height },
+                }),
+              ],
+            }),
+            arPara(diag.caption, {
+              align: AlignmentType.CENTER,
+              bold: true,
+              sizeHalfPt: 19,
+              color: '0F766E',
+              spacingBefore: 0,
+              spacingAfter: 120,
+            })
+          );
+        }
       }
 
       // رابعاً: مختبر الورق

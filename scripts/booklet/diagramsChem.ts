@@ -821,5 +821,89 @@ export function buildChemDiagrams(): Record<string, { png: Buffer; caption: stri
     'مصيدة وزارية قاتلة: عكس ترتيب القارورتين خطأ فادح؛ لأن الماء سيرطّب الغاز بعد تجفيفه!'
   );
 
+  // ==================== u10-l2: تطبيقات الهالوجينات في حياتنا اليومية ====================
+  add(
+    'u10-l2',
+    820,
+    400,
+    'تطبيقات الهالوجينات في حياتنا اليومية (الفلور، الكلور، البروم، واليود)',
+    `
+      ${[
+        {
+          x: 612,
+          title: '1. الفلور (F2)',
+          c: '#a16207',
+          bg: '#fefce8',
+          sub1: 'معجون الأسنان (الفلورايد)',
+          sub2: 'يقوّي المينا ويمنع التسوس',
+          sub3: 'وطلاء التفلون غير اللاصق',
+          draw: (cx: number) => `
+            <!-- Tooth + Shield -->
+            <path d="M${cx - 18} 148 Q${cx} 134 ${cx + 18} 148 Q${cx + 22} 178 ${cx + 12} 214 Q${cx + 6} 224 ${cx + 2} 200 Q${cx} 192 ${cx - 2} 200 Q${cx - 6} 224 ${cx - 12} 214 Q${cx - 22} 178 ${cx - 18} 148 Z" fill="#ffffff" stroke="#ca8a04" stroke-width="2.4"/>
+            <rect x="${cx - 28}" y="224" width="56" height="12" rx="4" fill="#fef08a" stroke="#a16207"/>
+          `,
+        },
+        {
+          x: 416,
+          title: '2. الكلور (Cl2)',
+          c: '#15803d',
+          bg: '#f0fdf4',
+          sub1: 'تعقيم مياه الشرب والمسابح',
+          sub2: 'يقتل البكتيريا والجراثيم',
+          sub3: 'ومساحيق التبييض وبلاستيك PVC',
+          draw: (cx: number) => `
+            <!-- Water tank / drop + Clean check -->
+            <path d="M${cx} 138 Q${cx + 28} 182 ${cx} 216 Q${cx - 28} 182 ${cx} 138 Z" fill="#38bdf8" stroke="#0369a1" stroke-width="2.4"/>
+            <circle cx="${cx + 16}" cy="154" r="10" fill="#dcfce7" stroke="#15803d" stroke-width="1.8"/>
+            ${svgTxt(cx + 16, 158, '✓', { size: 11, bold: true, color: '#15803d' })}
+          `,
+        },
+        {
+          x: 220,
+          title: '3. البروم (Br2)',
+          c: '#c2410c',
+          bg: '#fff7ed',
+          sub1: 'بروميد الفضة بالأفلام',
+          sub2: 'حساس للضوء بالتصوير',
+          sub3: 'ومثبطات الحريق والمهدئات',
+          draw: (cx: number) => `
+            <!-- Film strip -->
+            <rect x="${cx - 32}" y="148" width="64" height="54" rx="5" fill="#334155" stroke="#9a3412" stroke-width="2"/>
+            <rect x="${cx - 20}" y="158" width="16" height="34" fill="#fed7aa"/>
+            <rect x="${cx + 4}" y="158" width="16" height="34" fill="#fdba74"/>
+          `,
+        },
+        {
+          x: 24,
+          title: '4. اليود (I2)',
+          c: '#7e22ce',
+          bg: '#faf5ff',
+          sub1: 'ملح الطعام اليودي',
+          sub2: 'يقي الغدة الدرقية من التضخم',
+          sub3: 'وصبغة اليود لتطهير الجروح',
+          draw: (cx: number) => `
+            <!-- Thyroid butterfly gland -->
+            <ellipse cx="${cx - 14}" cy="176" rx="13" ry="22" fill="#e9d5ff" stroke="#7e22ce" stroke-width="2"/>
+            <ellipse cx="${cx + 14}" cy="176" rx="13" ry="22" fill="#e9d5ff" stroke="#7e22ce" stroke-width="2"/>
+            <rect x="${cx - 6}" y="170" width="12" height="12" fill="#d8b4fe" stroke="#7e22ce"/>
+          `,
+        },
+      ].map((h) => {
+        const cx = h.x + 92;
+        return `
+          <rect x="${h.x}" y="66" width="184" height="284" rx="10" fill="${h.bg}" stroke="${h.c}" stroke-width="1.8"/>
+          <rect x="${h.x}" y="66" width="184" height="36" rx="8" fill="${h.c}"/>
+          ${svgTxt(cx, 90, h.title, { bold: true, size: 13.5, color: '#ffffff' })}
+          ${h.draw(cx)}
+          ${svgTxt(cx, 256, h.sub1, { size: 11.2, bold: true, color: h.c })}
+          ${svgTxt(cx, 284, h.sub2, { size: 10.5, bold: true, color: '#1e293b' })}
+          ${svgTxt(cx, 312, h.sub3, { size: 10, color: '#475569' })}
+        `;
+      }).join('')}
+    `,
+    'شكل (10-3): الاستخدامات الحياتية والصحية والصناعية لعناصر الهالوجينات الأربعة.',
+    'وزاري: نقص اليود في الغذاء يسبب تضخم الغدة الدرقية (الجويتر)، ويُستخدم الفلورايد لمنع تسوس الأسنان'
+  );
+
   return out;
 }

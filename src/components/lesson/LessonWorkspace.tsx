@@ -10,14 +10,14 @@ import {
   HelpCircle,
   Image as ImageIcon,
   Lightbulb,
-  Maximize2,
-  Minimize2,
   Sparkles,
   Target,
   XCircle,
+  ZoomIn,
 } from 'lucide-react';
 import { DetailedLessonContent, PracticeQuestion } from '../../types/curriculum';
 import { ChemText, MathBlock } from '../common/ChemText';
+import { DiagramLightbox, ZoomableDiagramItem } from '../common/DiagramLightbox';
 import { AcidsBasesLab3D } from '../../labs/AcidsBasesLab3D';
 import { PressureLab3D } from '../../labs/PressureLab3D';
 import { MagnetismDynamoLab3D } from '../../labs/MagnetismDynamoLab3D';
@@ -27,19 +27,10 @@ import { AnatomyKidneyFlowerLab3D } from '../../labs/AnatomyKidneyFlowerLab3D';
 import { FormulaCalculators } from './FormulaCalculators';
 import { Lesson2DSimulations } from './Lesson2DSimulations';
 import { BOOKLET_DIAGRAMS } from '../../data/booklet/diagramsIndex';
+import { ENRICHED_PART_1 } from '../../data/booklet/enrichedPart1';
+import { ENRICHED_PART_2 } from '../../data/booklet/enrichedPart2';
 
-const LESSON_DIAGRAM_FALLBACK: Record<string, string> = {
-  'u8-l3': 'u8-l2',
-  'u10-l2': 'u10-l1',
-  'u11-l4': 'u11-l3',
-  'u11-l6': 'u11-l5',
-  'u11-l7': 'u11-l5',
-  'u14-l2': 'u14-l1',
-  'u15-l2': 'u15-l1',
-  'u15-l3': 'u15-l1',
-  'u16-l3': 'u16-l2',
-  'u16-l4': 'u16-l2',
-};
+const ALL_ENRICHED_LESSONS = { ...ENRICHED_PART_1, ...ENRICHED_PART_2 };
 
 interface LessonWorkspaceProps {
   lesson: DetailedLessonContent;
@@ -74,12 +65,20 @@ export const LessonWorkspace: React.FC<LessonWorkspaceProps> = ({
   const [discoverSelection, setDiscoverSelection] = useState<number | null>(null);
   const [predictSelection, setPredictSelection] = useState<Record<number, number>>({});
   const [questionSelections, setQuestionSelections] = useState<Record<string, number>>({});
-  const [diagramExpanded, setDiagramExpanded] = useState<boolean>(false);
+  const [zoomedDiagram, setZoomedDiagram] = useState<ZoomableDiagramItem | null>(null);
 
-  const diagramKey = BOOKLET_DIAGRAMS[lesson.lessonId]
-    ? lesson.lessonId
-    : LESSON_DIAGRAM_FALLBACK[lesson.lessonId];
-  const lessonDiagram = diagramKey ? BOOKLET_DIAGRAMS[diagramKey] : undefined;
+  const lessonDiagrams = (() => {
+    const enriched = ALL_ENRICHED_LESSONS[lesson.lessonId];
+    const ids: string[] = [];
+    if (enriched?.diagramId) ids.push(enriched.diagramId);
+    else if (BOOKLET_DIAGRAMS[lesson.lessonId]) ids.push(lesson.lessonId);
+    if (enriched?.extraDiagramIds?.length) {
+      for (const extraId of enriched.extraDiagramIds) {
+        if (!ids.includes(extraId)) ids.push(extraId);
+      }
+    }
+    return ids.map((id) => BOOKLET_DIAGRAMS[id]).filter(Boolean);
+  })();
 
   const goToStep = (stepNum: number) => {
     setActiveStep(stepNum);
@@ -290,34 +289,47 @@ export const LessonWorkspace: React.FC<LessonWorkspaceProps> = ({
             </ul>
           </div>
 
-          {lessonDiagram && (
-            <div className="rounded-2xl border border-teal-200/90 dark:border-teal-800/70 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-4 space-y-3 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-sm font-extrabold text-teal-800 dark:text-teal-300">
-                  <ImageIcon className="w-4 h-4 shrink-0" />
-                  <span>لوحة الرسم المدرسي الملوّنة (خطوات الرسم والأجزاء بالبيانات)</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setDiagramExpanded((prev) => !prev)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-teal-200 dark:border-teal-800 bg-teal-50/80 dark:bg-teal-950/60 px-2.5 py-1 text-xs font-bold text-teal-800 dark:text-teal-200 hover:bg-teal-100 dark:hover:bg-teal-900/70 transition-colors cursor-pointer"
+          {lessonDiagrams.length > 0 && (
+            <div className="space-y-4">
+              {lessonDiagrams.map((diag, diagIdx) => (
+                <div
+                  key={`${diag.src}-${diagIdx}`}
+                  className="rounded-2xl border border-teal-200/90 dark:border-teal-800/70 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-4 space-y-3 shadow-sm"
                 >
-                  {diagramExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-                  <span>{diagramExpanded ? 'تصغير اللوحة' : 'تكبير اللوحة لقراءة البيانات'}</span>
-                </button>
-              </div>
-              <figure className="rounded-xl border border-slate-200 bg-white p-2.5 sm:p-4 text-center space-y-2 overflow-x-auto">
-                <img
-                  src={lessonDiagram.src}
-                  alt={lessonDiagram.caption}
-                  className={`mx-auto h-auto rounded-lg transition-all ${
-                    diagramExpanded ? 'w-full max-w-4xl' : 'w-full max-w-2xl'
-                  }`}
-                />
-                <figcaption className="text-xs font-bold text-teal-900 pt-1">
-                  {lessonDiagram.caption}
-                </figcaption>
-              </figure>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-sm font-extrabold text-teal-800 dark:text-teal-300">
+                      <ImageIcon className="w-4 h-4 shrink-0" />
+                      <span>
+                        {lessonDiagrams.length > 1
+                          ? `لوحة الرسم المدرسي الملوّنة (${diagIdx + 1} من ${lessonDiagrams.length})`
+                          : 'لوحة الرسم المدرسي الملوّنة (خطوات الرسم والأجزاء بالبيانات)'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setZoomedDiagram(diag)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-teal-200 dark:border-teal-800 bg-teal-50/80 dark:bg-teal-950/60 px-3 py-1.5 text-xs font-bold text-teal-800 dark:text-teal-200 hover:bg-teal-100 dark:hover:bg-teal-900/70 transition-colors cursor-pointer"
+                    >
+                      <ZoomIn className="w-3.5 h-3.5" />
+                      <span>تكبير اللوحة لقراءة البيانات</span>
+                    </button>
+                  </div>
+                  <figure
+                    onClick={() => setZoomedDiagram(diag)}
+                    title="انقر لتكبير اللوحة وقراءة البيانات"
+                    className="group cursor-zoom-in rounded-xl border border-slate-200 bg-white p-2.5 sm:p-4 text-center space-y-2 overflow-x-auto hover:border-teal-400 transition-colors"
+                  >
+                    <img
+                      src={diag.src}
+                      alt={diag.caption}
+                      className="mx-auto w-full max-w-2xl h-auto rounded-lg"
+                    />
+                    <figcaption className="text-xs font-bold text-teal-900 pt-1">
+                      {diag.caption}
+                    </figcaption>
+                  </figure>
+                </div>
+              ))}
             </div>
           )}
 
@@ -617,6 +629,7 @@ export const LessonWorkspace: React.FC<LessonWorkspaceProps> = ({
           </div>
         </div>
       )}
+      <DiagramLightbox diagram={zoomedDiagram} onClose={() => setZoomedDiagram(null)} />
     </div>
   );
 };

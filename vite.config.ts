@@ -125,6 +125,22 @@ export default defineConfig(() => {
           });
         },
       },
+      {
+        name: 'pwa-disable-hmr-dev-sw-script',
+        apply: 'serve',
+        transformIndexHtml: {
+          order: 'post',
+          handler(html) {
+            if (process.env.DISABLE_HMR === 'true') {
+              return html.replace(
+                /<script id="vite-plugin-pwa:register-dev-sw"[\s\S]*?<\/script>\s*/i,
+                ''
+              );
+            }
+            return html;
+          },
+        },
+      },
     ],
     resolve: {
       alias: {

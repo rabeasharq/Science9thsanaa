@@ -825,10 +825,13 @@ export const BOOKLET_DIAGRAMS: Record<string, BookletDiagramMeta> = ${JSON.strin
         );
       }
 
-      // 4. Embedded Illustration PNG Diagram (if mapped to this lesson)
-      const diagKey = enriched?.diagramId && diagrams[enriched.diagramId] ? enriched.diagramId : undefined;
-      if (diagKey) {
-        children.push(...makeDiagramBlock(diagrams[diagKey]));
+      // 4. Embedded Illustration PNG Diagrams (primary + any extra textbook diagrams for this lesson)
+      const lessonDiagKeys = [
+        ...(enriched?.diagramId ? [enriched.diagramId] : []),
+        ...(enriched?.extraDiagramIds ?? []),
+      ].filter((id) => Boolean(diagrams[id]));
+      for (const dKey of lessonDiagKeys) {
+        children.push(...makeDiagramBlock(diagrams[dKey]));
       }
 
       // 5. Practical Lab Walkthrough on Paper (مختبر بدون معامل)
